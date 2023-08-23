@@ -11,15 +11,15 @@ const registerSchema = z.object({
   password: z.string().min(8).max(100),
 });
 
-export async function POST(req: Request) {
-  const result = registerSchema.safeParse(await req.json());
+export async function POST(request: Request) {
+  const result = registerSchema.safeParse(await request.json());
+
   if (!result.success) {
     return {
       status: 400,
       body: result.error.message,
     };
   }
-
   const { name, email, password } = result.data;
 
   const hashedPassword = await bcrypt.hash(password, 12);
@@ -34,7 +34,12 @@ export async function POST(req: Request) {
     .execute();
 
   const dbResult = await db
-    .select()
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      image: users.image,
+    })
     .from(users)
     .where(eq(users.email, email))
     .execute();
