@@ -6,9 +6,13 @@ import {
   varchar,
 } from "drizzle-orm/mysql-core";
 import type { AdapterAccount } from "@auth/core/adapters";
+import { randomUUID } from "crypto";
 
 export const users = mysqlTable("user", {
-  id: varchar("id", { length: 255 }).notNull().primaryKey(),
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
   name: varchar("name", { length: 255 }),
   email: varchar("email", { length: 255 }).unique().notNull(),
   emailVerified: timestamp("emailVerified", {
