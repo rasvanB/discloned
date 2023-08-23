@@ -1,6 +1,6 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db";
-import type { NextAuthOptions } from "next-auth";
+import { getServerSession, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { z } from "zod";
 import { users } from "@/db/schema";
@@ -62,7 +62,12 @@ const authOptions = {
     }),
   ],
   secret: env.AUTH_SECRET,
+  session: {
+    strategy: "jwt",
+  },
   debug: process.env.NODE_ENV === "development",
 } satisfies NextAuthOptions;
+
+export const getServerAuthSession = () => getServerSession(authOptions);
 
 export default authOptions;

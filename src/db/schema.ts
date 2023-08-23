@@ -44,9 +44,3 @@ export const accounts = mysqlTable(
     compoundKey: primaryKey(account.provider, account.providerAccountId),
   })
 );
-
-export const sessions = mysqlTable("session", {
-  sessionToken: varchar("sessionToken", { length: 255 }).notNull().primaryKey(),
-  userId: varchar("userId", { length: 255 }).notNull(),
-  expires: timestamp("expires", { mode: "date" }).notNull(),
-});
