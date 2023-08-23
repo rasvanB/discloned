@@ -1157,6 +1157,11 @@ drizzle-orm@^0.28.3:
   resolved "https://registry.yarnpkg.com/drizzle-orm/-/drizzle-orm-0.28.3.tgz#6de9233755969be62d2fc9b4f810e32de43ea7d2"
   integrity sha512-7LwNEBJH5EFvkD0vm7RdKWDZsFP9CYR4AWN2fMwns/ezexoX3+UNoVOWGRPJf1qsj357SESldrNEueFvUDfZxA==
 
+drizzle-zod@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/drizzle-zod/-/drizzle-zod-0.5.0.tgz#e5b6a1e83051b47549f1a0c6e2fdb11c21b72360"
+  integrity sha512-gIOXclphhaleYFEGZFxSyJBoiPRyksGyIPgmgWz6a+j5JeaOrOf1QOPjf1p5AHYA+1O3Q01ondGOZfgObxBTsg==
+
 electron-to-chromium@^1.4.477:
   version "1.4.499"
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.499.tgz#dc36b67f4c8e273524e8d2080c5203a6a76987b6"
