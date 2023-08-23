@@ -1,11 +1,13 @@
-import { drizzle } from "drizzle-orm/libsql";
-import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/planetscale-serverless";
 import * as schema from "./schema";
 import { env } from "@/env.mjs";
 
-const client = createClient({
-  url: env.DATABASE_URL,
-  authToken: env.DATABASE_AUTH_TOKEN,
+import { connect } from "@planetscale/database";
+
+const client = connect({
+  host: env.DATABASE_HOST,
+  username: env.DATABASE_USER,
+  password: env.DATABASE_PASSWORD,
 });
 
 export const db = drizzle(client, { schema, logger: true });
