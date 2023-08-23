@@ -4,14 +4,15 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     DATABASE_HOST: z.string().nonempty(),
-    DATABASE_USER: z.string().nonempty(),
+    DATABASE_USERNAME: z.string().nonempty(),
     DATABASE_PASSWORD: z.string().nonempty(),
     AUTH_SECRET: z.string().nonempty(),
   },
   client: {},
   runtimeEnv: {
-    DATABASE_URL: process.env.DATABASE_URL,
-    DATABASE_AUTH_TOKEN: process.env.DATABASE_AUTH_TOKEN,
+    DATABASE_HOST: process.env.DATABASE_HOST,
+    DATABASE_USERNAME: process.env.DATABASE_USERNAME,
+    DATABASE_PASSWORD: process.env.DATABASE_PASSWORD,
     AUTH_SECRET: process.env.AUTH_SECRET,
   },
 });
