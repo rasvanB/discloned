@@ -104,7 +104,7 @@ export default function Login() {
         <span className="text-sm text-muted-foreground">
           {"Already have an account?"}
           <Link
-            href="/auth/register"
+            href="/auth/login"
             className="underline underline-offset-2 text-primary hover:text-primary/70 font-medium ml-1"
           >
             Log in
