@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/app/_trpc/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import AuthAlert from "@/components/auth-alert";
+import { useState } from "react";
 
 const formSchema = z.object({
   name: z.string().min(3).max(30),
@@ -26,6 +28,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function Login() {
+  const [error, setError] = useState<string | null>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
   });
@@ -35,6 +38,10 @@ export default function Login() {
   const registerMutation = trpc.register.useMutation({
     onSuccess: () => {
       router.push("/auth/login");
+    },
+    onError: (err) => {
+      setError(err.message);
+      setTimeout(() => setError(null), 5000);
     },
   });
 
@@ -51,6 +58,7 @@ export default function Login() {
             Register with your email and password.
           </p>
         </div>
+        {error && <AuthAlert variant="destructive" message={error} />}
         <div className="space-y-1">
           <FormField
             control={form.control}
