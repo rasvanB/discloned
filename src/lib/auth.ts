@@ -1,12 +1,26 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db";
 import { getServerSession, type NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
 import { z } from "zod";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { env } from "@/env.mjs";
+
+import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+import DiscordProvider from "next-auth/providers/discord";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      email: string;
+      image: string;
+      name: string;
+    };
+  }
+}
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -53,14 +67,30 @@ const authOptions = {
         }
 
         return {
+          id: user.id,
           email: user.email,
           image: user.image,
           name: user.name,
-          id: user.id,
         };
       },
     }),
+    GoogleProvider({
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    }),
+    DiscordProvider({
+      clientId: env.DISCORD_CLIENT_ID,
+      clientSecret: env.DISCORD_CLIENT_SECRET,
+    }),
   ],
+  callbacks: {
+    session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
+  },
   secret: env.AUTH_SECRET,
   session: {
     strategy: "jwt",
