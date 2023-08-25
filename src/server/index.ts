@@ -1,6 +1,6 @@
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { publicProcedure, router } from "./trpc";
+import { protectedProcedure, publicProcedure, router } from "./trpc";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -30,8 +30,9 @@ export const appRouter = router({
           .execute();
       } catch (error) {
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Could not create user",
+          code: "CONFLICT",
+          message: "User already exists",
+          cause: error,
         });
       }
 
@@ -43,8 +44,7 @@ export const appRouter = router({
           image: users.image,
         })
         .from(users)
-        .where(eq(users.email, email))
-        .execute();
+        .where(eq(users.email, email));
 
       const user = dbResult[0];
 
