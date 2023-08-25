@@ -27,6 +27,15 @@ const credentialsSchema = z.object({
   password: z.string().nonempty(),
 });
 
+const credentialErrors = ["invalid_credentials", "invalid_password"] as const;
+
+type CredentialError = (typeof credentialErrors)[number];
+
+export const errorMessageMap: Record<CredentialError, string> = {
+  invalid_credentials: "Invalid credentials",
+  invalid_password: "Invalid password",
+};
+
 const authOptions = {
   adapter: DrizzleAdapter(db),
   providers: [
@@ -39,7 +48,7 @@ const authOptions = {
       async authorize(credentials) {
         const result = credentialsSchema.safeParse(credentials);
         if (!result.success) {
-          throw new Error("Invalid credentials");
+          throw new Error(errorMessageMap.invalid_credentials);
         }
 
         const { email, password } = result.data;
@@ -54,7 +63,7 @@ const authOptions = {
         const user = dbResult[0];
 
         if (!user || !user?.hashedPassword) {
-          throw new Error("Invalid credentials");
+          throw new Error(errorMessageMap.invalid_credentials);
         }
 
         const isPasswordCorrect = await bcrypt.compare(
@@ -63,7 +72,7 @@ const authOptions = {
         );
 
         if (!isPasswordCorrect) {
-          throw new Error("Invalid password");
+          throw new Error(errorMessageMap.invalid_password);
         }
 
         return {
@@ -96,6 +105,10 @@ const authOptions = {
     strategy: "jwt",
   },
   debug: process.env.NODE_ENV === "development",
+  pages: {
+    signIn: "/auth/login",
+    error: "/auth/login",
+  },
 } satisfies NextAuthOptions;
 
 export const getServerAuthSession = () => getServerSession(authOptions);

@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { DiscordIcon, GoogleIcon } from "@/components/icons";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import AuthAlert from "@/components/auth-alert";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -31,7 +33,14 @@ export default function Login() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
   });
+
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setIsLoggingIn(true);
@@ -52,6 +61,7 @@ export default function Login() {
             Sign in with your email and password.
           </p>
         </div>
+        {error && <AuthAlert variant="destructive" message={error} />}
         <div className="space-y-1">
           <FormField
             control={form.control}
@@ -100,7 +110,7 @@ export default function Login() {
           <span className="w-full h-px bg-muted" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
+          <span className="bg-card px-2 text-muted-foreground">
             Or continue with
           </span>
         </div>
