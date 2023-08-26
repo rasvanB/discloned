@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { getUserGuild, getUserGuilds, insertGuildToDb } from "@/db/queries";
 
 export const appRouter = router({
   register: publicProcedure
@@ -57,6 +58,41 @@ export const appRouter = router({
 
       return user;
     }),
+  createGuild: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(3).max(32),
+        imageId: z.string().nonempty(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { name, imageId } = input;
+      const { user } = ctx;
+
+      try {
+        await insertGuildToDb({ name, imageId, ownerId: user.id });
+        const createdGuild = await getUserGuild(user.id);
+        return createdGuild;
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong while creating guild",
+          cause: error,
+        });
+      }
+    }),
+  getGuilds: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const userGuilds = await getUserGuilds(ctx.user.id);
+      return userGuilds;
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Something went wrong while getting guilds",
+        cause: error,
+      });
+    }
+  }),
 });
 
 export type AppRouter = typeof appRouter;
