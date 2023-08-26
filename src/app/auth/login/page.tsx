@@ -19,6 +19,7 @@ import { DiscordIcon, GoogleIcon } from "@/components/icons";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AuthAlert from "@/components/auth-alert";
+import { RotateCw } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -91,6 +92,7 @@ export default function Login() {
           />
         </div>
         <Button type="submit" className="w-full mt-2" disabled={isLoggingIn}>
+          {isLoggingIn && <RotateCw size={20} className="animate-spin mr-2" />}
           {isLoggingIn ? "Logging in..." : "Log in"}
         </Button>
       </form>

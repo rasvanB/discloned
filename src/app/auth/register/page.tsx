@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthAlert from "@/components/auth-alert";
 import { useState } from "react";
+import { RotateCw } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(3).max(30),
@@ -110,7 +111,10 @@ export default function Register() {
           className="w-full mt-2"
           disabled={registerMutation.isLoading}
         >
-          Register
+          {registerMutation.isLoading && (
+            <RotateCw size={20} className="animate-spin mr-2" />
+          )}
+          {registerMutation.isLoading ? "Registering..." : "Register"}
         </Button>
       </form>
       <div className="mt-2 text-center">
