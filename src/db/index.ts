@@ -6,7 +6,7 @@ import { connect } from "@planetscale/database";
 
 const client = connect({
   host: env.DATABASE_HOST,
-  username: env.DATABASE_USER,
+  username: env.DATABASE_USERNAME,
   password: env.DATABASE_PASSWORD,
 });
 
