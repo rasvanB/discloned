@@ -9,11 +9,11 @@ const AuthAlert = ({
   message: string;
 }) => {
   return (
-    <Alert variant={variant}>
+    <Alert variant={variant} className="mb-2">
       {variant === "destructive" ? (
         <AlertTriangle size={20} />
       ) : (
-        <CheckCircle />
+        <CheckCircle size={18} />
       )}
       <AlertTitle>{variant === "destructive" ? "Error" : "Success"}</AlertTitle>
       <AlertDescription>{message}</AlertDescription>
