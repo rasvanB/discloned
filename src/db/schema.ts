@@ -6,6 +6,7 @@ import {
   varchar,
   text,
 } from "drizzle-orm/mysql-core";
+import { relations } from "drizzle-orm";
 import type { AdapterAccount } from "@auth/core/adapters";
 import { randomUUID } from "crypto";
 
@@ -19,7 +20,7 @@ export const users = mysqlTable("user", {
   emailVerified: timestamp("emailVerified", {
     mode: "date",
     fsp: 3,
-  }).defaultNow(),
+  }),
   hashedPassword: varchar("hashedPassword", { length: 255 }),
   image: varchar("image", { length: 255 }),
 });
@@ -45,3 +46,33 @@ export const accounts = mysqlTable(
     compoundKey: primaryKey(account.provider, account.providerAccountId),
   })
 );
+
+export const uploadedImages = mysqlTable("uploadedImage", {
+  id: varchar("id", { length: 255 }).notNull().primaryKey(),
+  url: varchar("url", { length: 255 }).notNull(),
+});
+
+export const guilds = mysqlTable("guild", {
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
+  name: varchar("name", { length: 255 }).notNull(),
+  imageId: varchar("image", { length: 255 }),
+  ownerId: varchar("ownerId", { length: 255 }).notNull(),
+});
+
+export const userRelations = relations(users, ({ many }) => ({
+  guilds: many(guilds),
+}));
+
+export const guildRelations = relations(guilds, ({ one }) => ({
+  owner: one(users, {
+    fields: [guilds.ownerId],
+    references: [users.id],
+  }),
+  image: one(uploadedImages, {
+    fields: [guilds.imageId],
+    references: [uploadedImages.id],
+  }),
+}));
