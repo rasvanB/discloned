@@ -1,6 +1,6 @@
 import { serverClient } from "@/app/_trpc/serverClient";
 import Separator from "./separator";
-import ServerButton from "./server-button";
+import { DirectMessagesButton } from "./server-button";
 import CreateGuildDialog from "./create-guild-dialog";
 
 export default async function ServerNav() {
@@ -8,7 +8,7 @@ export default async function ServerNav() {
   return (
     <nav className="h-screen w-[75px] bg-card border-r-[1px] flex flex-col items-center py-2">
       <div className="w-full flex flex-col items-center">
-        <ServerButton />
+        <DirectMessagesButton />
         <Separator />
         {servers &&
           servers.map((server) => {
