@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { DiscordIcon, GoogleIcon } from "@/components/icons";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -31,7 +30,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function Login() {
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -44,14 +42,14 @@ export default function Login() {
   const error = searchParams.get("error");
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    setIsLoggingIn(true);
     await signIn("credentials", {
       email: data.email,
       password: data.password,
       callbackUrl: "/",
     });
-    setIsLoggingIn(false);
   };
+
+  const isLoading = form.formState.isSubmitting;
 
   return (
     <Form {...form}>
@@ -91,9 +89,9 @@ export default function Login() {
             )}
           />
         </div>
-        <Button type="submit" className="w-full mt-2" disabled={isLoggingIn}>
-          {isLoggingIn && <RotateCw size={20} className="animate-spin mr-2" />}
-          {isLoggingIn ? "Logging in..." : "Log in"}
+        <Button type="submit" className="w-full mt-2" disabled={isLoading}>
+          {isLoading && <RotateCw size={20} className="animate-spin mr-2" />}
+          {isLoading ? "Logging in..." : "Log in"}
         </Button>
       </form>
       <div className="mt-2 text-center">
@@ -121,14 +119,12 @@ export default function Login() {
         <Button
           variant={"outline"}
           className="w-full"
-          onClick={async () => {
-            setIsLoggingIn(true);
+          onClick={async () =>
             await signIn("google", {
               callbackUrl: "/",
-            });
-            setIsLoggingIn(false);
-          }}
-          disabled={isLoggingIn}
+            })
+          }
+          disabled={isLoading}
         >
           <GoogleIcon />
           <span className="ml-2">Google</span>
@@ -136,14 +132,12 @@ export default function Login() {
         <Button
           variant={"outline"}
           className="w-full"
-          onClick={async () => {
-            setIsLoggingIn(true);
+          onClick={async () =>
             await signIn("discord", {
               callbackUrl: "/",
-            });
-            setIsLoggingIn(false);
-          }}
-          disabled={isLoggingIn}
+            })
+          }
+          disabled={isLoading}
         >
           <DiscordIcon />
           <span className="ml-2">Discord</span>
