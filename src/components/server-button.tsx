@@ -8,30 +8,53 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 
-type ButtonWithTooltipProps = {
+type ServerButtonProps = {
+  Icon?: LucideIcon;
+  imageUrl?: string;
   tooltip: string;
-  Icon: LucideIcon;
+  href: string;
+  className?: string;
   onClick: () => void;
+  style?: React.CSSProperties;
 };
 
-const ButtonWithTooltip = ({
+export const ServerButton = ({
   tooltip,
   Icon,
+  imageUrl,
   onClick,
-}: ButtonWithTooltipProps) => {
+  className,
+  href,
+  style,
+}: ServerButtonProps) => {
   return (
     <div className="relative w-full h-[50px] flex justify-center">
       <TooltipProvider>
-        <Tooltip>
+        <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
-            <Button
-              variant={"outline"}
-              className="w-[50px] h-full p-2"
-              onClick={onClick}
-            >
-              <Icon size={20} />
-            </Button>
+            <Link href={href}>
+              <Button
+                style={style}
+                variant={"outline"}
+                className={cn(className, "w-[50px] h-full p-0 overflow-hidden")}
+                onClick={onClick}
+              >
+                {Icon && <Icon size={20} />}
+                {imageUrl && (
+                  <Image
+                    src={imageUrl}
+                    alt="server icon"
+                    width={100}
+                    height={100}
+                    className="w-[50px] h-[50px]"
+                  />
+                )}
+              </Button>
+            </Link>
           </TooltipTrigger>
           <TooltipContent side={"left"}>
             <p>{tooltip}</p>
@@ -44,16 +67,11 @@ const ButtonWithTooltip = ({
 
 export const DirectMessagesButton = () => {
   return (
-    <ButtonWithTooltip
+    <ServerButton
       tooltip={"Direct messages"}
       Icon={Send}
       onClick={() => {}}
+      href="/server/me"
     />
-  );
-};
-
-export const ServerButton = () => {
-  return (
-    <ButtonWithTooltip tooltip={"Server"} Icon={Send} onClick={() => {}} />
   );
 };

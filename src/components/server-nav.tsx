@@ -2,6 +2,7 @@ import { serverClient } from "@/app/_trpc/serverClient";
 import Separator from "./separator";
 import { DirectMessagesButton } from "./server-button";
 import CreateGuildDialog from "./create-guild-dialog";
+import ServerList from "./server-list";
 
 export default async function ServerNav() {
   const servers = await serverClient.getGuilds();
@@ -10,10 +11,7 @@ export default async function ServerNav() {
       <div className="w-full flex flex-col items-center">
         <DirectMessagesButton />
         <Separator />
-        {servers &&
-          servers.map((server) => {
-            return <div key={server.id}>{server.name}</div>;
-          })}
+        <ServerList initialData={servers} />
         <CreateGuildDialog />
       </div>
     </nav>
