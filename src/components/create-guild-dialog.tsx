@@ -32,6 +32,8 @@ import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
+import { getQueryKey } from "@trpc/react-query";
+import { queryClient } from "@/app/_trpc/provider";
 
 const OpenDialogButton = ({ onClick }: { onClick?: () => void }) => {
   return (
@@ -41,7 +43,7 @@ const OpenDialogButton = ({ onClick }: { onClick?: () => void }) => {
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-[50px] h-[50px] rounded-full"
+              className="w-[50px] h-[50px] rounded-full mt-2"
               onClick={onClick}
             >
               <PlusIcon />
@@ -99,7 +101,9 @@ const ImageUploader = (
 
 const createGuildSchema = z.object({
   name: z.string().min(3).max(32),
-  imageId: z.string().nonempty(),
+  imageId: z
+    .string()
+    .nonempty({ message: "You have to upload an image for the Server Icon" }),
 });
 
 type CreateGuildSchema = z.infer<typeof createGuildSchema>;
@@ -117,19 +121,34 @@ const CreateGuildDialog = () => {
 
   const createGuildMutation = trpc.createGuild.useMutation({
     onSuccess: (result) => {
-      // router.push(`/channels/${result.id}`);
+      if (!result) return;
+      const getGuildsQueryKey = getQueryKey(trpc.getGuilds, undefined, "query");
+      queryClient.invalidateQueries(getGuildsQueryKey);
+
+      router.push(`/server/${result.id}`);
     },
   });
 
-  const onSubmit: SubmitHandler<CreateGuildSchema> = async (e) => {
-    createGuildMutation.mutateAsync({
+  const onSubmit: SubmitHandler<CreateGuildSchema> = (e) => {
+    createGuildMutation.mutate({
       name: e.name,
       imageId: e.imageId,
     });
   };
 
+  const errorMessage =
+    form.formState.errors.imageId?.message ||
+    form.formState.errors.name?.message ||
+    createGuildMutation.error?.message;
+
   return (
-    <Dialog>
+    <Dialog
+      onOpenChange={(openState) => {
+        if (!openState) {
+          form.reset();
+        }
+      }}
+    >
       <OpenDialogButton />
       <DialogContent className="sm:max-w-[425px]">
         <Form {...form}>
@@ -142,11 +161,8 @@ const CreateGuildDialog = () => {
                 }
               </DialogDescription>
             </DialogHeader>
-            {createGuildMutation.isError && (
-              <AuthAlert
-                variant="destructive"
-                message={createGuildMutation.error?.message}
-              />
+            {errorMessage && (
+              <AuthAlert variant="destructive" message={errorMessage} />
             )}
             <div>
               <Label className="text-right">Server Icon</Label>
@@ -177,11 +193,11 @@ const CreateGuildDialog = () => {
               />
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && (
+              <Button type="submit" disabled={createGuildMutation.isLoading}>
+                {createGuildMutation.isLoading && (
                   <RotateCw size={15} className="animate-spin mr-2" />
                 )}
-                {form.formState.isSubmitting
+                {createGuildMutation.isLoading
                   ? "Creating server..."
                   : "Create server"}
               </Button>
