@@ -7,12 +7,13 @@ import { useState } from "react";
 import { trpc } from "./client";
 import getBaseUrl from "@/utils/getBaseUrl";
 
+export const queryClient = new QueryClient();
+
 export default function TRPCProvider({
   children,
 }: {
   children: React.ReactNode;
 }): React.ReactNode {
-  const [queryClient] = useState(() => new QueryClient({}));
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [httpBatchLink({ url: `${getBaseUrl()}/api/trpc` })],

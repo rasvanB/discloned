@@ -19,7 +19,7 @@ const UserSettings = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size={"icon"}>
-            <Settings size={20} />
+            <Settings size={20} className="text-accent-foreground" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-52">

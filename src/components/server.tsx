@@ -21,7 +21,7 @@ const Server = ({ server }: ServerProps) => {
         style={
           active
             ? {
-                height: "30px",
+                height: "40px",
               }
             : {}
         }

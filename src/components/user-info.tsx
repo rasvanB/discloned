@@ -1,5 +1,5 @@
 import { getServerAuthSession } from "@/lib/auth";
-import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Avatar } from "./ui/avatar";
 import Image from "next/image";
 import UserSettings from "./user-settings";
 
@@ -8,7 +8,7 @@ const UserInfo = async () => {
   if (!session) return null;
 
   return (
-    <div className="h-[55px] gap-2 items-center border-t-[1px] flex px-2 leading-none">
+    <div className="h-14 gap-2 items-center border-t-[1px] border-border/60 flex px-2 leading-none bottom-0 left-0 absolute w-full z-10 bg-card">
       <Avatar className="w-[35px] h-auto">
         <Image
           src={session.user.image}
