@@ -5,7 +5,14 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { getUserGuild, getUserGuilds, insertGuildToDb } from "@/db/queries";
+import {
+  createChannel,
+  getGuildChannels,
+  getUserGuildById,
+  getUserGuilds,
+  insertGuildToDb,
+} from "@/db/queries";
+import { randomUUID } from "crypto";
 
 export const appRouter = router({
   register: publicProcedure
@@ -70,10 +77,19 @@ export const appRouter = router({
       const { user } = ctx;
 
       try {
-        await insertGuildToDb({ name, imageId, ownerId: user.id });
-        const createdGuild = await getUserGuild(user.id);
-        return createdGuild;
+        const guildId = randomUUID();
+        await insertGuildToDb({ name, imageId, ownerId: user.id, id: guildId });
+        await createChannel({
+          guildId,
+          name: "general",
+          type: "text",
+        });
+
+        return {
+          id: guildId,
+        };
       } catch (error) {
+        console.log(error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Something went wrong while creating guild",
@@ -83,9 +99,9 @@ export const appRouter = router({
     }),
   getGuilds: protectedProcedure.query(async ({ ctx }) => {
     try {
-      const userGuilds = await getUserGuilds(ctx.user.id);
-      return userGuilds;
+      return await getUserGuilds(ctx.user.id);
     } catch (error) {
+      console.log(error);
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Something went wrong while getting guilds",
@@ -93,6 +109,33 @@ export const appRouter = router({
       });
     }
   }),
+  getGuildById: protectedProcedure
+    .input(z.string().nonempty())
+    .query(async ({ ctx, input }) => {
+      try {
+        return await getUserGuildById(ctx.user.id, input);
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong while getting guild",
+          cause: error,
+        });
+      }
+    }),
+  getChannelsForGuild: protectedProcedure
+    .input(z.string().nonempty())
+    .query(async ({ input }) => {
+      try {
+        return await getGuildChannels(input);
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong while getting channels",
+          cause: error,
+        });
+      }
+    }),
 });
 
 export type AppRouter = typeof appRouter;
