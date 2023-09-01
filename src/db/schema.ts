@@ -5,6 +5,7 @@ import {
   primaryKey,
   varchar,
   text,
+  mysqlEnum,
 } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 import type { AdapterAccount } from "@auth/core/adapters";
@@ -60,13 +61,26 @@ export const guilds = mysqlTable("guild", {
   name: varchar("name", { length: 255 }).notNull(),
   imageId: varchar("image", { length: 255 }),
   ownerId: varchar("ownerId", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
+    .notNull()
+    .defaultNow(),
+});
+
+export const channels = mysqlTable("channel", {
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => Math.floor(Math.random() * Math.pow(10, 14)).toString()),
+  name: varchar("name", { length: 255 }).notNull(),
+  guildId: varchar("guildId", { length: 255 }).notNull(),
+  type: mysqlEnum("type", ["text", "voice", "video"]).notNull().default("text"),
 });
 
 export const userRelations = relations(users, ({ many }) => ({
   guilds: many(guilds),
 }));
 
-export const guildRelations = relations(guilds, ({ one }) => ({
+export const guildRelations = relations(guilds, ({ one, many }) => ({
   owner: one(users, {
     fields: [guilds.ownerId],
     references: [users.id],
@@ -74,5 +88,13 @@ export const guildRelations = relations(guilds, ({ one }) => ({
   image: one(uploadedImages, {
     fields: [guilds.imageId],
     references: [uploadedImages.id],
+  }),
+  channels: many(channels),
+}));
+
+export const channelRelations = relations(channels, ({ one }) => ({
+  guild: one(guilds, {
+    fields: [channels.guildId],
+    references: [guilds.id],
   }),
 }));
