@@ -6,6 +6,7 @@ import {
   varchar,
   text,
   mysqlEnum,
+  index,
 } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 import type { AdapterAccount } from "@auth/core/adapters";
@@ -45,7 +46,7 @@ export const accounts = mysqlTable(
   },
   (account) => ({
     compoundKey: primaryKey(account.provider, account.providerAccountId),
-  })
+  }),
 );
 
 export const uploadedImages = mysqlTable("uploadedImage", {
@@ -66,15 +67,48 @@ export const guilds = mysqlTable("guild", {
     .defaultNow(),
 });
 
-export const channels = mysqlTable("channel", {
-  id: varchar("id", { length: 255 })
-    .notNull()
-    .primaryKey()
-    .$defaultFn(() => Math.floor(Math.random() * Math.pow(10, 14)).toString()),
-  name: varchar("name", { length: 255 }).notNull(),
-  guildId: varchar("guildId", { length: 255 }).notNull(),
-  type: mysqlEnum("type", ["text", "voice", "video"]).notNull().default("text"),
-});
+export const channels = mysqlTable(
+  "channel",
+  {
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() =>
+        Math.floor(Math.random() * Math.pow(10, 14)).toString(),
+      ),
+    name: varchar("name", { length: 255 }).notNull(),
+    guildId: varchar("guildId", { length: 255 }).notNull(),
+    type: mysqlEnum("type", ["text", "voice", "video"])
+      .notNull()
+      .default("text"),
+  },
+  (channel) => {
+    return {
+      guildIdx: index("guildIdx").on(channel.guildId),
+    };
+  },
+);
+
+export const members = mysqlTable(
+  "member",
+  {
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    userId: varchar("userId", { length: 255 }).notNull(),
+    guildId: varchar("guildId", { length: 255 }).notNull(),
+    role: mysqlEnum("role", ["owner", "admin", "member"])
+      .notNull()
+      .default("member"),
+  },
+  (member) => {
+    return {
+      userIdx: index("userIdx").on(member.userId),
+      guildIdx: index("guildIdx").on(member.guildId),
+    };
+  },
+);
 
 export const userRelations = relations(users, ({ many }) => ({
   guilds: many(guilds),
@@ -89,12 +123,24 @@ export const guildRelations = relations(guilds, ({ one, many }) => ({
     fields: [guilds.imageId],
     references: [uploadedImages.id],
   }),
+  members: many(members),
   channels: many(channels),
 }));
 
 export const channelRelations = relations(channels, ({ one }) => ({
   guild: one(guilds, {
     fields: [channels.guildId],
+    references: [guilds.id],
+  }),
+}));
+
+export const memberRelations = relations(members, ({ one }) => ({
+  user: one(users, {
+    fields: [members.userId],
+    references: [users.id],
+  }),
+  guild: one(guilds, {
+    fields: [members.guildId],
     references: [guilds.id],
   }),
 }));
