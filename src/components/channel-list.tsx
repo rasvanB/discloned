@@ -8,9 +8,11 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible";
 import { useState } from "react";
-import { Button } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
 import { ChevronDown, Hash, Plus, Video, Volume2Icon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
 const ChannelIconsMap = {
   text: <Hash size={16} className="text-secondary-foreground/80" />,
@@ -18,19 +20,50 @@ const ChannelIconsMap = {
   video: <Video size={15} />,
 };
 
+const Channel = ({
+  currentChannelId,
+  guildId,
+  channel,
+}: {
+  currentChannelId?: string | string[];
+  guildId: string;
+  channel: NonNullable<ProcedureOutputs["getGuildById"]>["channels"][number];
+}) => {
+  return (
+    <Link
+      href={`/server/${guildId}/channel/${channel.id}`}
+      className={cn(
+        buttonVariants({ variant: "ghost" }),
+        "flex items-center gap-2 w-full justify-start mt-1",
+        channel.id === currentChannelId && "bg-accent text-accent-foreground",
+      )}
+      replace={true}
+    >
+      <div>{ChannelIconsMap[channel.type]}</div>
+      <span className="leading-none font-medium text-sm">{channel.name}</span>
+    </Link>
+  );
+};
+
 const ChannelList = ({
   initialData,
   guildId,
+  userRole,
 }: {
-  initialData: NonNullable<ProcedureOutputs["getGuildById"]>["channels"];
   guildId: string;
+  initialData: NonNullable<ProcedureOutputs["getGuildById"]>["channels"];
+  userRole: NonNullable<
+    ProcedureOutputs["getGuildById"]
+  >["members"][number]["role"];
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const params = useParams();
+
   const { data, isLoading } = trpc.getChannelsForGuild.useQuery(guildId, {
     initialData,
     refetchOnMount: false,
     refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
   });
 
   if (isLoading) {
@@ -40,6 +73,8 @@ const ChannelList = ({
   if (!data) {
     return <div>Failed to load channels</div>;
   }
+
+  const currentChannelId = params.channelID;
 
   return (
     <div className="py-3 px-2">
@@ -51,31 +86,34 @@ const ChannelList = ({
                 size={16}
                 className={cn(
                   isOpen && "transform rotate-180",
-                  "transition-transform"
+                  "transition-transform",
                 )}
               />
               <h4 className="text-sm font-semibold leading-tight">Channels</h4>
               <span className="sr-only">Toggle</span>
             </Button>
           </CollapsibleTrigger>
-          <Button variant="ghost" size={"icon"}>
-            <Plus size={16} />
-          </Button>
+          {(userRole === "admin" || userRole === "owner") && (
+            <Button variant="ghost" size={"icon"}>
+              <Plus size={16} />
+            </Button>
+          )}
         </div>
         {data[0] && (
-          <Button
-            variant={"ghost"}
-            className="flex items-center gap-1 w-full justify-start"
-          >
-            <div>{ChannelIconsMap[data[0].type]}</div>
-            <span className="leading-none font-medium text-sm">
-              {data[0].name}
-            </span>
-          </Button>
+          <Channel
+            currentChannelId={currentChannelId}
+            guildId={guildId}
+            channel={data[0]}
+          />
         )}
         <CollapsibleContent className="space-y-2">
           {data.slice(1).map((channel) => (
-            <div key={channel.id}>{channel.name}</div>
+            <Channel
+              key={channel.id}
+              currentChannelId={currentChannelId}
+              guildId={guildId}
+              channel={channel}
+            />
           ))}
         </CollapsibleContent>
       </Collapsible>
