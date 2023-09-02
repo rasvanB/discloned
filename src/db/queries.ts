@@ -1,6 +1,6 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from ".";
-import { channels, guilds, uploadedImages } from "./schema";
+import { channels, guilds, members, uploadedImages, users } from "./schema";
 
 type ImageInsert = typeof uploadedImages.$inferInsert;
 
@@ -15,6 +15,8 @@ export async function insertImageToDb(input: ImageInsert) {
 type GuildInsert = typeof guilds.$inferInsert;
 type GuildSelect = typeof guilds.$inferSelect;
 type ChannelInsert = typeof channels.$inferInsert;
+type UserInsert = typeof users.$inferInsert;
+type MemberInsert = typeof members.$inferInsert;
 
 export async function insertGuildToDb(input: GuildInsert) {
   try {
@@ -71,10 +73,19 @@ export async function getUserGuildById(userId: string, guildId: string) {
   try {
     return await db.query.guilds.findFirst({
       where(fields, { eq, and }) {
-        return and(eq(fields.id, guildId), eq(fields.ownerId, userId));
+        return and(eq(fields.id, guildId));
       },
       with: {
         channels: true,
+        members: {
+          where(fields, { eq }) {
+            return eq(fields.userId, userId);
+          },
+        },
+      },
+      columns: {
+        imageId: false,
+        ownerId: false,
       },
     });
   } catch (error) {
@@ -92,17 +103,61 @@ export async function createChannel(input: ChannelInsert) {
   }
 }
 
-export async function getGuildChannels(guildId: string) {
+export async function getGuildChannels(guildId: string, userId: string) {
   try {
-    return await db.query.channels.findMany({
-      where(fields, { eq }) {
-        return eq(fields.guildId, guildId);
-      },
-      columns: {
-        guildId: false,
-      },
-    });
+    return await db
+      .select({
+        id: channels.id,
+        name: channels.name,
+        type: channels.type,
+        guildId: channels.guildId,
+      })
+      .from(channels)
+      .leftJoin(members, eq(channels.guildId, members.guildId))
+      .where(and(eq(members.userId, userId), eq(channels.guildId, guildId)));
   } catch (error) {
     throw new Error("Something went wrong while getting guild channels");
+  }
+}
+
+export async function createUser(input: UserInsert) {
+  try {
+    await db.insert(users).values(input);
+  } catch (error) {
+    throw new Error("Something went wrong while creating user");
+  }
+}
+
+export async function getUserByEmail(email: string) {
+  try {
+    const dbResult = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        image: users.image,
+      })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    const user = dbResult[0];
+
+    if (!user) {
+      console.log("no users found");
+      return;
+    }
+
+    return user;
+  } catch (error) {
+    throw new Error("Something went wrong while getting user by email");
+  }
+}
+
+export async function createServerMember(input: MemberInsert) {
+  try {
+    await db.insert(members).values(input);
+  } catch (error) {
+    throw new Error("Something went wrong while creating member");
   }
 }

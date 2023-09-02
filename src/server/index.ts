@@ -1,18 +1,20 @@
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { protectedProcedure, publicProcedure, router } from "./trpc";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import {
   createChannel,
+  createServerMember,
+  createUser,
   getGuildChannels,
+  getUserByEmail,
   getUserGuildById,
   getUserGuilds,
   insertGuildToDb,
 } from "@/db/queries";
 import { randomUUID } from "crypto";
+
+export type AppRouter = typeof appRouter;
 
 export const appRouter = router({
   register: publicProcedure
@@ -21,21 +23,18 @@ export const appRouter = router({
         name: z.string().min(3).max(30),
         email: z.string().email(),
         password: z.string().min(8).max(100),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const { name, email, password } = input;
       const hashedPassword = await bcrypt.hash(password, 12);
 
       try {
-        await db
-          .insert(users)
-          .values({
-            name,
-            email,
-            hashedPassword,
-          })
-          .execute();
+        await createUser({
+          email,
+          name,
+          hashedPassword,
+        });
       } catch (error) {
         throw new TRPCError({
           code: "CONFLICT",
@@ -44,17 +43,7 @@ export const appRouter = router({
         });
       }
 
-      const dbResult = await db
-        .select({
-          id: users.id,
-          name: users.name,
-          email: users.email,
-          image: users.image,
-        })
-        .from(users)
-        .where(eq(users.email, email));
-
-      const user = dbResult[0];
+      const user = getUserByEmail(email);
 
       if (!user) {
         throw new TRPCError({
@@ -70,7 +59,7 @@ export const appRouter = router({
       z.object({
         name: z.string().min(3).max(32),
         imageId: z.string().nonempty(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { name, imageId } = input;
@@ -79,10 +68,17 @@ export const appRouter = router({
       try {
         const guildId = randomUUID();
         await insertGuildToDb({ name, imageId, ownerId: user.id, id: guildId });
+
         await createChannel({
           guildId,
           name: "general",
           type: "text",
+        });
+
+        await createServerMember({
+          guildId,
+          role: "owner",
+          userId: user.id,
         });
 
         return {
@@ -125,10 +121,11 @@ export const appRouter = router({
     }),
   getChannelsForGuild: protectedProcedure
     .input(z.string().nonempty())
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       try {
-        return await getGuildChannels(input);
+        return await getGuildChannels(input, ctx.user.id);
       } catch (error) {
+        console.log(error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Something went wrong while getting channels",
@@ -137,5 +134,3 @@ export const appRouter = router({
       }
     }),
 });
-
-export type AppRouter = typeof appRouter;
