@@ -26,6 +26,7 @@ const Server = ({ server }: ServerProps) => {
             : {}
         }
       ></div>
+      {/* TODO: Replace nope with some default image url */}
       <ServerButton
         tooltip={server.name}
         imageUrl={server.image ? server.image.url : "nope"}
@@ -37,7 +38,6 @@ const Server = ({ server }: ServerProps) => {
               }
             : {}
         }
-        onClick={() => {}}
         href={`/server/${server.id}`}
       />
     </div>

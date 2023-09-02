@@ -11,6 +11,7 @@ import {
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { CSSProperties } from "react";
 
 type ServerButtonProps = {
   Icon?: LucideIcon;
@@ -18,15 +19,13 @@ type ServerButtonProps = {
   tooltip: string;
   href: string;
   className?: string;
-  onClick: () => void;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 };
 
 export const ServerButton = ({
   tooltip,
   Icon,
   imageUrl,
-  onClick,
   className,
   href,
   style,
@@ -41,7 +40,6 @@ export const ServerButton = ({
                 style={style}
                 variant={"outline"}
                 className={cn(className, "w-[50px] h-full p-0 overflow-hidden")}
-                onClick={onClick}
               >
                 {Icon && <Icon size={20} />}
                 {imageUrl && (
@@ -67,11 +65,6 @@ export const ServerButton = ({
 
 export const DirectMessagesButton = () => {
   return (
-    <ServerButton
-      tooltip={"Direct messages"}
-      Icon={Send}
-      onClick={() => {}}
-      href="/server/me"
-    />
+    <ServerButton tooltip={"Direct messages"} Icon={Send} href="/server/me" />
   );
 };
