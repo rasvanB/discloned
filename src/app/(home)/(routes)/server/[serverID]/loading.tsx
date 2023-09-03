@@ -1,7 +1,5 @@
-export default function Loading() {
-  return (
-    <div className="w-full h-full flex">
-      <h1>Loading...</h1>
-    </div>
-  );
-}
+const Loading = () => {
+  return <div>loading</div>;
+};
+
+export default Loading;

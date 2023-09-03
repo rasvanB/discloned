@@ -1,7 +1,7 @@
 import { DMsSideBar, ServerSideBar } from "@/components/side-bar";
-import SideBarSkeleton from "@/components/skeletons/side-bar";
 import { redirect } from "next/navigation";
 import React, { Suspense } from "react";
+import SideBarSkeleton from "@/components/skeletons/side-bar";
 
 const ServerLayout = ({
   params,
