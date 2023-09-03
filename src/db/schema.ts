@@ -7,17 +7,21 @@ import {
   text,
   mysqlEnum,
   index,
+  unique,
 } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 import type { AdapterAccount } from "@auth/core/adapters";
 import { randomUUID } from "crypto";
+
+export const generateChannelId = () =>
+  Math.floor(Math.random() * Math.pow(10, 14)).toString();
 
 export const users = mysqlTable("user", {
   id: varchar("id", { length: 255 })
     .notNull()
     .primaryKey()
     .$defaultFn(() => randomUUID()),
-  name: varchar("name", { length: 255 }),
+  name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).unique().notNull(),
   emailVerified: timestamp("emailVerified", {
     mode: "date",
@@ -73,11 +77,12 @@ export const channels = mysqlTable(
     id: varchar("id", { length: 255 })
       .notNull()
       .primaryKey()
-      .$defaultFn(() =>
-        Math.floor(Math.random() * Math.pow(10, 14)).toString(),
-      ),
+      .$defaultFn(() => generateChannelId()),
     name: varchar("name", { length: 255 }).notNull(),
     guildId: varchar("guildId", { length: 255 }).notNull(),
+    createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
+      .notNull()
+      .$defaultFn(() => new Date()),
     type: mysqlEnum("type", ["text", "voice", "video"])
       .notNull()
       .default("text"),
@@ -85,6 +90,7 @@ export const channels = mysqlTable(
   (channel) => {
     return {
       guildIdx: index("guildIdx").on(channel.guildId),
+      uniqueNameGuildId: unique("unique").on(channel.guildId, channel.name),
     };
   },
 );
@@ -101,6 +107,9 @@ export const members = mysqlTable(
     role: mysqlEnum("role", ["owner", "admin", "member"])
       .notNull()
       .default("member"),
+    joinedAt: timestamp("joinedAt", { mode: "date", fsp: 3 })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (member) => {
     return {
