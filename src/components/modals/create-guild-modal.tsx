@@ -1,7 +1,7 @@
 "use client";
 
 import { PlusIcon, RotateCw } from "lucide-react";
-import { Button, buttonVariants } from "./ui/button";
+import { Button, buttonVariants } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,62 +9,57 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import {
-  Tooltip,
-  TooltipProvider,
-  TooltipTrigger,
-  TooltipContent,
-} from "./ui/tooltip";
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 import { ComponentProps, useState } from "react";
-import { UploadDropzone } from "./uploadthing";
+import { UploadDropzone } from "../uploadthing";
 
 import "@uploadthing/react/styles.css";
 import { cn } from "@/lib/utils";
-import AuthAlert from "./auth-alert";
+import AuthAlert from "../auth-alert";
 import { UploadFileResponse } from "uploadthing/client";
 import { z } from "zod";
 import { trpc } from "@/app/_trpc/client";
 import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem } from "./ui/form";
+import { Form, FormControl, FormField, FormItem } from "../ui/form";
 import { getQueryKey } from "@trpc/react-query";
 import { queryClient } from "@/app/_trpc/provider";
+import { useModal } from "@/hooks/use-modal";
+import TooltipWrapper from "@/components/tooltip";
 
-const OpenDialogButton = ({ onClick }: { onClick?: () => void }) => {
+export const OpenCreateGuildModalButton = () => {
+  const modal = useModal();
+
+  const handleOpen = () => {
+    modal.onOpen({
+      type: "createGuild",
+      state: null,
+    });
+  };
+
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-[50px] h-[50px] rounded-full mt-2"
-              onClick={onClick}
-            >
-              <PlusIcon />
-            </Button>
-          </DialogTrigger>
-        </TooltipTrigger>
-        <TooltipContent side={"left"}>
-          <p>Create a Server</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <TooltipWrapper content={"Create a Server"}>
+      <Button
+        variant="outline"
+        className="w-[50px] h-[50px] rounded-full mt-2"
+        onClick={handleOpen}
+      >
+        <PlusIcon />
+      </Button>
+    </TooltipWrapper>
   );
 };
 
 const ImageUploader = (
   props: Omit<ComponentProps<typeof UploadDropzone>, "endpoint"> & {
     onChange: (file?: string) => void;
-  }
+  },
 ) => {
   const [uploadedImage, setUploadedImage] = useState<UploadFileResponse | null>(
-    null
+    null,
   );
   return (
     <UploadDropzone
@@ -74,7 +69,7 @@ const ImageUploader = (
         container: "border-2 border-dashed border-foreground-muted",
         button: cn(
           buttonVariants({ size: "sm", variant: "default" }),
-          "ut-uploading:bg-primary/90 ut-readying:bg-primary/90 after:bg-primary/0"
+          "ut-uploading:bg-primary/90 ut-readying:bg-primary/90 after:bg-primary/0",
         ),
       }}
       content={{
@@ -108,7 +103,7 @@ const createGuildSchema = z.object({
 
 type CreateGuildSchema = z.infer<typeof createGuildSchema>;
 
-const CreateGuildDialog = () => {
+const CreateGuildModal = () => {
   const form = useForm<CreateGuildSchema>({
     resolver: zodResolver(createGuildSchema),
     defaultValues: {
@@ -117,15 +112,25 @@ const CreateGuildDialog = () => {
     },
   });
 
+  const { modal, isOpen, onClose } = useModal();
+
+  const isModalOpen = modal.type === "createGuild" && isOpen;
+
+  const onCloseModal = () => {
+    form.reset();
+    onClose();
+  };
+
   const router = useRouter();
 
   const createGuildMutation = trpc.createGuild.useMutation({
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (!result) return;
       const getGuildsQueryKey = getQueryKey(trpc.getGuilds, undefined, "query");
-      queryClient.invalidateQueries(getGuildsQueryKey);
+      await queryClient.invalidateQueries(getGuildsQueryKey);
 
       router.push(`/server/${result.id}`);
+      onCloseModal();
     },
   });
 
@@ -141,15 +146,10 @@ const CreateGuildDialog = () => {
     form.formState.errors.name?.message ||
     createGuildMutation.error?.message;
 
+  if (modal.type !== "createGuild") return null;
+
   return (
-    <Dialog
-      onOpenChange={(openState) => {
-        if (!openState) {
-          form.reset();
-        }
-      }}
-    >
-      <OpenDialogButton />
+    <Dialog open={isModalOpen} onOpenChange={onCloseModal}>
       <DialogContent className="sm:max-w-[425px]">
         <Form {...form}>
           <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
@@ -209,4 +209,4 @@ const CreateGuildDialog = () => {
   );
 };
 
-export default CreateGuildDialog;
+export default CreateGuildModal;
