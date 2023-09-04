@@ -4,9 +4,10 @@ import { protectedProcedure, publicProcedure, router } from "./trpc";
 import { TRPCError } from "@trpc/server";
 import {
   createChannel,
-  createServerMember,
+  createGuildMember,
   createUser,
   getGuildChannels,
+  getGuildMembers,
   getUserByEmail,
   getUserGuildById,
   getUserGuilds,
@@ -75,7 +76,7 @@ export const appRouter = router({
           type: "text",
         });
 
-        await createServerMember({
+        await createGuildMember({
           guildId,
           role: "owner",
           userId: user.id,
@@ -129,6 +130,40 @@ export const appRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Something went wrong while getting channels",
+          cause: error,
+        });
+      }
+    }),
+  createChannel: protectedProcedure
+    .input(
+      z.object({
+        guildId: z.string().nonempty(),
+        name: z.string().min(3).max(32),
+        type: z.enum(["text", "voice", "video"]),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      try {
+        return await createChannel(input);
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong while creating channel",
+          cause: error,
+        });
+      }
+    }),
+  getMembersForGuild: protectedProcedure
+    .input(z.string().nonempty())
+    .query(async ({ input }) => {
+      try {
+        return await getGuildMembers(input);
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong while getting members",
           cause: error,
         });
       }
