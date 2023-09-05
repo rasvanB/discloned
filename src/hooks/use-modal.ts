@@ -14,6 +14,24 @@ type Modal =
       state: {
         guildId: string;
       };
+    }
+  | {
+      type: "deleteServer";
+      state: {
+        guildId: string;
+      };
+    }
+  | {
+      type: "leaveServer";
+      state: {
+        guildId: string;
+      };
+    }
+  | {
+      type: "inviteMember";
+      state: {
+        guildId: string;
+      };
     };
 
 type ModalStore = {
