@@ -95,6 +95,17 @@ export const channels = mysqlTable(
   },
 );
 
+export const invites = mysqlTable("invite", {
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => generateChannelId()),
+  guildId: varchar("guildId", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 export const members = mysqlTable(
   "member",
   {
