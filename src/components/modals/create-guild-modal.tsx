@@ -95,7 +95,14 @@ const ImageUploader = (
 };
 
 const createGuildSchema = z.object({
-  name: z.string().min(3).max(32),
+  name: z
+    .string()
+    .min(3, {
+      message: "Server name must be at least 3 characters long",
+    })
+    .max(32, {
+      message: "Server name must be at most 32 characters long",
+    }),
   imageId: z
     .string()
     .nonempty({ message: "You have to upload an image for the Server Icon" }),
