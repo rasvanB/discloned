@@ -5,9 +5,14 @@ import { TRPCError } from "@trpc/server";
 import {
   createChannel,
   createGuildMember,
+  createServerInvite,
   createUser,
+  deleteGuild,
+  deleteGuildMember,
   getGuildChannels,
+  getGuildMember,
   getGuildMembers,
+  getServerInvite,
   getUserByEmail,
   getUserGuildById,
   getUserGuilds,
@@ -164,6 +169,92 @@ export const appRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Something went wrong while getting members",
+          cause: error,
+        });
+      }
+    }),
+  deleteServer: protectedProcedure
+    .input(z.string().nonempty())
+    .mutation(async ({ input, ctx }) => {
+      const { user } = ctx;
+      const member = await getGuildMember(input, user.id);
+
+      console.log(input);
+      console.log(member);
+      if (!member) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Not a member of this guild",
+        });
+      }
+
+      if (member.role !== "owner") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authorized to delete this guild",
+        });
+      }
+
+      try {
+        await deleteGuild(input);
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong while deleting guild",
+          cause: error,
+        });
+      }
+    }),
+  leaveServer: protectedProcedure
+    .input(z.string().nonempty())
+    .mutation(async ({ input, ctx }) => {
+      const { user } = ctx;
+      const member = await getGuildMember(input, user.id);
+
+      if (!member) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Not a member of this guild",
+        });
+      }
+
+      try {
+        await deleteGuildMember(input);
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong while deleting guild",
+          cause: error,
+        });
+      }
+    }),
+  getInvite: protectedProcedure
+    .input(z.string().nonempty())
+    .query(async ({ input }) => {
+      if (input === "none") return;
+      try {
+        return (await getServerInvite(input)) || null;
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong while getting invite",
+          cause: error,
+        });
+      }
+    }),
+  createInvite: protectedProcedure
+    .input(z.string().nonempty())
+    .mutation(async ({ input }) => {
+      try {
+        return (await createServerInvite(input)) || null;
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong while creating invite",
           cause: error,
         });
       }

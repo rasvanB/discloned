@@ -1,6 +1,14 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from ".";
-import { channels, guilds, members, uploadedImages, users } from "./schema";
+import {
+  channels,
+  generateChannelId,
+  guilds,
+  invites,
+  members,
+  uploadedImages,
+  users,
+} from "./schema";
 
 type ImageInsert = typeof uploadedImages.$inferInsert;
 
@@ -51,19 +59,19 @@ export async function getUserGuild(userId: GuildSelect["ownerId"]) {
 
 export async function getUserGuilds(userId: string) {
   try {
-    return await db.query.guilds.findMany({
-      where(fields, { eq }) {
-        return eq(fields.ownerId, userId);
-      },
-      columns: {
-        imageId: false,
-        ownerId: false,
-        createdAt: false,
-      },
-      with: {
-        image: true,
-      },
-    });
+    return await db
+      .select({
+        id: guilds.id,
+        name: guilds.name,
+        image: {
+          id: uploadedImages.id,
+          url: uploadedImages.url,
+        },
+      })
+      .from(guilds)
+      .innerJoin(members, eq(guilds.id, members.guildId))
+      .innerJoin(uploadedImages, eq(guilds.imageId, uploadedImages.id))
+      .where(eq(members.userId, userId));
   } catch (error) {
     throw new Error("Something went wrong while getting user guilds");
   }
@@ -81,6 +89,19 @@ export async function getUserGuildById(userId: string, guildId: string) {
           where(fields, { eq }) {
             return eq(fields.userId, userId);
           },
+          with: {
+            user: {
+              columns: {
+                id: false,
+                email: false,
+                hashedPassword: false,
+                emailVerified: false,
+              },
+            },
+          },
+          columns: {
+            guildId: false,
+          },
         },
       },
       columns: {
@@ -96,8 +117,12 @@ export async function getUserGuildById(userId: string, guildId: string) {
 
 export async function createChannel(input: ChannelInsert) {
   try {
-    const executedQuery = await db.insert(channels).values(input).execute();
-    console.log("INSERT ID: ", executedQuery.insertId);
+    const channelId = generateChannelId();
+    await db
+      .insert(channels)
+      .values({ ...input, id: channelId })
+      .execute();
+    return channelId;
   } catch (error) {
     throw new Error("Something went wrong");
   }
@@ -111,11 +136,14 @@ export async function getGuildChannels(guildId: string, userId: string) {
         name: channels.name,
         type: channels.type,
         guildId: channels.guildId,
+        createdAt: channels.createdAt,
       })
       .from(channels)
       .leftJoin(members, eq(channels.guildId, members.guildId))
-      .where(and(eq(members.userId, userId), eq(channels.guildId, guildId)));
+      .where(and(eq(members.userId, userId), eq(channels.guildId, guildId)))
+      .orderBy(desc(channels.createdAt));
   } catch (error) {
+    console.log(error);
     throw new Error("Something went wrong while getting guild channels");
   }
 }
@@ -154,10 +182,105 @@ export async function getUserByEmail(email: string) {
   }
 }
 
-export async function createServerMember(input: MemberInsert) {
+export async function doesUserExist(userId: string) {
+  try {
+    const user = await db.query.users.findFirst({
+      where(fields, { eq }) {
+        return eq(fields.id, userId);
+      },
+      columns: {
+        id: true,
+        email: false,
+        hashedPassword: false,
+        emailVerified: false,
+        name: false,
+      },
+    });
+    return Boolean(user);
+  } catch (error) {
+    return false;
+  }
+}
+export async function createGuildMember(input: MemberInsert) {
   try {
     await db.insert(members).values(input);
   } catch (error) {
     throw new Error("Something went wrong while creating member");
+  }
+}
+
+export async function getGuildMembers(guildId: string) {
+  try {
+    return await db
+      .select({
+        id: members.id,
+        userId: members.userId,
+        role: members.role,
+        joinedAt: members.joinedAt,
+        user: {
+          name: users.name,
+          image: users.image,
+        },
+      })
+      .from(members)
+      .innerJoin(users, eq(members.userId, users.id))
+      .where(eq(members.guildId, guildId));
+  } catch (error) {
+    throw new Error("Something went wrong while getting guild members");
+  }
+}
+
+export async function getGuildMember(guildId: string, userId: string) {
+  try {
+    return await db.query.members.findFirst({
+      where(fields, { eq, and }) {
+        return and(eq(fields.guildId, guildId), eq(fields.userId, userId));
+      },
+    });
+  } catch (error) {
+    throw new Error("Something went wrong while getting guild member");
+  }
+}
+
+export async function deleteGuild(guildId: string) {
+  try {
+    await db.delete(guilds).where(eq(guilds.id, guildId)).execute();
+    await db.delete(channels).where(eq(channels.guildId, guildId)).execute();
+    await db.delete(members).where(eq(members.guildId, guildId)).execute();
+  } catch (error) {
+    throw new Error("Something went wrong while deleting guild");
+  }
+}
+
+export async function deleteGuildMember(guildId: string) {
+  try {
+    await db.delete(members).where(eq(members.guildId, guildId)).execute();
+  } catch (error) {
+    throw new Error("Something went wrong while deleting guild member");
+  }
+}
+
+export async function getServerInvite(guildId: string) {
+  try {
+    const dbResult = await db
+      .select()
+      .from(invites)
+      .where(eq(invites.guildId, guildId))
+      .limit(1);
+
+    return dbResult[0];
+  } catch (error) {
+    throw new Error("Something went wrong while getting server invite");
+  }
+}
+
+export async function createServerInvite(guildId: string) {
+  try {
+    const inviteId = generateChannelId();
+    await db.delete(invites).where(eq(invites.guildId, guildId)).execute();
+    await db.insert(invites).values({ id: inviteId, guildId }).execute();
+    return inviteId;
+  } catch (error) {
+    throw new Error("Something went wrong while creating server invite");
   }
 }
