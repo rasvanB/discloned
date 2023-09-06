@@ -10,6 +10,8 @@ import { env } from "@/env.mjs";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import DiscordProvider from "next-auth/providers/discord";
+import { doesUserExist } from "@/db/queries";
+import { signOut } from "next-auth/react";
 
 declare module "next-auth" {
   interface Session {
@@ -68,7 +70,7 @@ const authOptions = {
 
         const isPasswordCorrect = await bcrypt.compare(
           password,
-          user.hashedPassword
+          user.hashedPassword,
         );
 
         if (!isPasswordCorrect) {
@@ -111,6 +113,12 @@ const authOptions = {
   },
 } satisfies NextAuthOptions;
 
-export const getServerAuthSession = () => getServerSession(authOptions);
+export const getServerAuthSession = async () => {
+  const session = await getServerSession(authOptions);
+  if (!session) return session;
+  if (await doesUserExist(session.user.id)) return session;
+  await signOut();
+  return null;
+};
 
 export default authOptions;
