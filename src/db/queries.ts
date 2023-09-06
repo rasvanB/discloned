@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from ".";
 import {
   channels,
@@ -282,5 +282,43 @@ export async function createServerInvite(guildId: string) {
     return inviteId;
   } catch (error) {
     throw new Error("Something went wrong while creating server invite");
+  }
+}
+
+export async function getInvite(inviteId: string) {
+  try {
+    return (
+      await db
+        .select({
+          createdAt: invites.createdAt,
+          guild: {
+            id: guilds.id,
+            name: guilds.name,
+            createdAt: guilds.createdAt,
+          },
+          imageUrl: uploadedImages.url,
+          memberCount: sql<number>`count(member.id)`,
+        })
+        .from(invites)
+        .innerJoin(guilds, eq(invites.guildId, guilds.id))
+        .innerJoin(uploadedImages, eq(guilds.imageId, uploadedImages.id))
+        .innerJoin(members, eq(guilds.id, members.guildId))
+        .where(eq(invites.id, inviteId))
+        .limit(1)
+        .execute()
+    )[0];
+  } catch (error) {
+    throw new Error("Something went wrong while getting invite");
+  }
+}
+
+export async function addMemberToGuild(guildId: string, userId: string) {
+  try {
+    await db
+      .insert(members)
+      .values({ guildId, userId, role: "member" })
+      .execute();
+  } catch (error) {
+    throw new Error("Something went wrong while adding member to guild");
   }
 }

@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { protectedProcedure, publicProcedure, router } from "./trpc";
 import { TRPCError } from "@trpc/server";
 import {
+  addMemberToGuild,
   createChannel,
   createGuildMember,
   createServerInvite,
@@ -12,6 +13,7 @@ import {
   getGuildChannels,
   getGuildMember,
   getGuildMembers,
+  getInvite,
   getServerInvite,
   getUserByEmail,
   getUserGuildById,
@@ -255,6 +257,35 @@ export const appRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Something went wrong while creating invite",
+          cause: error,
+        });
+      }
+    }),
+  getInviteInfo: protectedProcedure
+    .input(z.string().nonempty())
+    .query(async ({ input }) => {
+      try {
+        return await getInvite(input);
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong while getting invite info",
+          cause: error,
+        });
+      }
+    }),
+  addServerMember: protectedProcedure
+    .input(z.string().nonempty())
+    .mutation(async ({ input, ctx }) => {
+      const { user } = ctx;
+      try {
+        await addMemberToGuild(input, user.id);
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong adding member to guild",
           cause: error,
         });
       }
