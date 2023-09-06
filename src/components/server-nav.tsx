@@ -1,8 +1,12 @@
 import { serverClient } from "@/app/_trpc/serverClient";
 import Separator from "./separator";
 import { DirectMessagesButton } from "./server-button";
-import CreateGuildDialog from "./create-guild-dialog";
+import CreateGuildModal, {
+  OpenCreateGuildModalButton,
+} from "./modals/create-guild-modal";
 import ServerList from "./server-list";
+
+export const revalitade = 3600;
 
 export default async function ServerNav() {
   const servers = await serverClient.getGuilds();
@@ -12,7 +16,8 @@ export default async function ServerNav() {
         <DirectMessagesButton />
         <Separator />
         <ServerList initialData={servers} />
-        <CreateGuildDialog />
+        <OpenCreateGuildModalButton />
+        <CreateGuildModal />
       </div>
     </nav>
   );

@@ -126,6 +126,7 @@ export const members = mysqlTable(
     return {
       userIdx: index("userIdx").on(member.userId),
       guildIdx: index("guildIdx").on(member.guildId),
+      uniqueUserGuild: unique("unique").on(member.userId, member.guildId),
     };
   },
 );

@@ -4,6 +4,7 @@ import ChannelList from "./channel-list";
 import { ReactNode } from "react";
 import MemberList from "@/components/member-list";
 import ServerSettings from "@/components/server-settings";
+import { redirect } from "next/navigation";
 
 export const revalidate = 3600;
 
@@ -18,7 +19,8 @@ export const BaseSideBar = ({ children }: { children: ReactNode }) => {
 
 export const ServerSideBar = async ({ serverId }: { serverId: string }) => {
   const serverInfo = await serverClient.getGuildById(serverId);
-  if (!serverInfo) return null;
+
+  if (!serverInfo) redirect("/server/me");
 
   const user = serverInfo.members[0];
   if (!user) return null;
@@ -30,18 +32,11 @@ export const ServerSideBar = async ({ serverId }: { serverId: string }) => {
     };
   });
 
-  const serverMembers = serverInfo.members.map((member) => {
-    return {
-      ...member,
-      joinedAt: member.joinedAt.toString(),
-    };
-  });
-
   return (
     <BaseSideBar>
       <div className="h-12 p-3 border-b-[1px] border-border/60 flex items-center justify-between">
         <p className="text-[16px] font-medium">{serverInfo.name}</p>
-        <ServerSettings userRole={user.role} />
+        <ServerSettings userRole={user.role} guildId={serverId} />
       </div>
       {serverInfo.channels && (
         <ChannelList
@@ -50,7 +45,7 @@ export const ServerSideBar = async ({ serverId }: { serverId: string }) => {
           userRole={user.role}
         />
       )}
-      <MemberList initialData={serverMembers} guildId={serverId} />
+      <MemberList guildId={serverId} />
     </BaseSideBar>
   );
 };

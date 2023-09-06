@@ -42,6 +42,7 @@ export const ServerButton = ({
                 width={50}
                 height={50}
                 className="w-[50px] h-[50px]"
+                referrerPolicy={"no-referrer"}
               />
             )}
           </Button>

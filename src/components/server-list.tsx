@@ -12,7 +12,6 @@ const ServerList = ({ initialData }: ServerListProps) => {
   const serverMutation = trpc.getGuilds.useQuery(undefined, {
     refetchOnMount: false,
     refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
     initialData: initialData,
   });
 
