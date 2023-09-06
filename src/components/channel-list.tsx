@@ -9,15 +9,17 @@ import {
 } from "./ui/collapsible";
 import { useState } from "react";
 import { Button, buttonVariants } from "./ui/button";
-import { ChevronDown, Hash, Plus, Video, Volume2Icon } from "lucide-react";
+import { ChevronRight, Hash, Plus, Video, Volume2Icon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useModal } from "@/hooks/use-modal";
+import CreateChannelModal from "@/components/modals/create-channel-modal";
 
 const ChannelIconsMap = {
   text: <Hash size={16} className="text-secondary-foreground/80" />,
-  voice: <Volume2Icon size={15} />,
-  video: <Video size={15} />,
+  voice: <Volume2Icon size={16} className="text-secondary-foreground/80" />,
+  video: <Video size={16} className="text-secondary-foreground/80" />,
 };
 
 const Channel = ({
@@ -39,7 +41,7 @@ const Channel = ({
       )}
       replace={true}
     >
-      <div>{ChannelIconsMap[channel.type]}</div>
+      {ChannelIconsMap[channel.type]}
       <span className="leading-none font-medium text-sm">{channel.name}</span>
     </Link>
   );
@@ -56,25 +58,36 @@ const ChannelList = ({
     ProcedureOutputs["getGuildById"]
   >["members"][number]["role"];
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   const params = useParams();
 
-  const { data, isLoading } = trpc.getChannelsForGuild.useQuery(guildId, {
+  const { onOpen } = useModal();
+
+  const handleOpen = () => {
+    onOpen({
+      type: "createChannel",
+      state: {
+        guildId,
+      },
+    });
+  };
+
+  const { data } = trpc.getChannelsForGuild.useQuery(guildId, {
     initialData,
     refetchOnMount: false,
     refetchOnReconnect: false,
   });
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
 
   if (!data) {
     return <div>Failed to load channels</div>;
   }
 
   const currentChannelId = params.channelID;
+  const canEditServer = userRole === "owner" || userRole === "admin";
+
+  const generalChannel = data.find((channel) => channel.name === "general");
+  const restChannels = data.filter((channel) => channel.name !== "general");
 
   return (
     <div className="py-3 px-2">
@@ -82,10 +95,10 @@ const ChannelList = ({
         <div className="flex items-center">
           <CollapsibleTrigger asChild>
             <Button variant="ghost" className="p-1 w-full justify-start gap-1">
-              <ChevronDown
+              <ChevronRight
                 size={16}
                 className={cn(
-                  isOpen && "transform rotate-180",
+                  isOpen && "transform rotate-90",
                   "transition-transform",
                 )}
               />
@@ -93,21 +106,21 @@ const ChannelList = ({
               <span className="sr-only">Toggle</span>
             </Button>
           </CollapsibleTrigger>
-          {(userRole === "admin" || userRole === "owner") && (
-            <Button variant="ghost" size={"icon"}>
+          {canEditServer && (
+            <Button variant="ghost" size={"icon"} onClick={handleOpen}>
               <Plus size={16} />
             </Button>
           )}
         </div>
-        {data[0] && (
+        {generalChannel && (
           <Channel
             currentChannelId={currentChannelId}
             guildId={guildId}
-            channel={data[0]}
+            channel={generalChannel}
           />
         )}
-        <CollapsibleContent className="space-y-2">
-          {data.slice(1).map((channel) => (
+        <CollapsibleContent className="space-y-1">
+          {restChannels.map((channel) => (
             <Channel
               key={channel.id}
               currentChannelId={currentChannelId}
@@ -117,6 +130,7 @@ const ChannelList = ({
           ))}
         </CollapsibleContent>
       </Collapsible>
+      {canEditServer && <CreateChannelModal />}
     </div>
   );
 };
