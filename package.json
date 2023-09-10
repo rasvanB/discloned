@@ -1,0 +1,26 @@
+{
+  "name": "discord-clone",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:server": "cd backend && pnpm tsx src/index.ts",
+    "dev:client": "cd frontend && pnpm dev",
+    "dev": "concurrently \"pnpm dev:server\" \"pnpm dev:client\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rasvanB/discord-clone.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rasvanB/discord-clone/issues"
+  },
+  "homepage": "https://github.com/rasvanB/discord-clone#readme",
+  "dependencies": {
+    "concurrently": "^8.2.1"
+  }
+}
