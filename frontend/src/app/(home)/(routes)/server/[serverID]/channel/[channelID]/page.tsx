@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import TestingComponent from "@/components/testing-component";
 
 const Page = ({
   params,
@@ -14,6 +15,7 @@ const Page = ({
   return (
     <div>
       <h1>Channel {params.channelID}</h1>
+      <TestingComponent />
     </div>
   );
 };

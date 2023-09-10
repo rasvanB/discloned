@@ -83,7 +83,7 @@ const ChannelList = ({
     return <div>Failed to load channels</div>;
   }
 
-  const currentChannelId = params.channelID;
+  const currentChannelId = params?.channelID;
   const canEditServer = userRole === "owner" || userRole === "admin";
 
   const generalChannel = data.find((channel) => channel.name === "general");

@@ -235,7 +235,7 @@ export const appRouter = router({
   getInvite: protectedProcedure
     .input(z.string().nonempty())
     .query(async ({ input }) => {
-      if (input === "none") return;
+      if (input === "none") return null;
       try {
         return (await getServerInvite(input)) || null;
       } catch (error) {

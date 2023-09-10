@@ -11,7 +11,7 @@ import {
 } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 import type { AdapterAccount } from "@auth/core/adapters";
-import { randomUUID } from "crypto";
+import { v4 } from "uuid";
 
 export const generateChannelId = () =>
   Math.floor(Math.random() * Math.pow(10, 14)).toString();
@@ -20,7 +20,7 @@ export const users = mysqlTable("user", {
   id: varchar("id", { length: 255 })
     .notNull()
     .primaryKey()
-    .$defaultFn(() => randomUUID()),
+    .$defaultFn(() => v4()),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).unique().notNull(),
   emailVerified: timestamp("emailVerified", {
@@ -62,7 +62,7 @@ export const guilds = mysqlTable("guild", {
   id: varchar("id", { length: 255 })
     .notNull()
     .primaryKey()
-    .$defaultFn(() => randomUUID()),
+    .$defaultFn(() => v4()),
   name: varchar("name", { length: 255 }).notNull(),
   imageId: varchar("image", { length: 255 }),
   ownerId: varchar("ownerId", { length: 255 }).notNull(),
@@ -112,7 +112,7 @@ export const members = mysqlTable(
     id: varchar("id", { length: 255 })
       .notNull()
       .primaryKey()
-      .$defaultFn(() => randomUUID()),
+      .$defaultFn(() => v4()),
     userId: varchar("userId", { length: 255 }).notNull(),
     guildId: varchar("guildId", { length: 255 }).notNull(),
     role: mysqlEnum("role", ["owner", "admin", "member"])
@@ -127,6 +127,34 @@ export const members = mysqlTable(
       userIdx: index("userIdx").on(member.userId),
       guildIdx: index("guildIdx").on(member.guildId),
       uniqueUserGuild: unique("unique").on(member.userId, member.guildId),
+    };
+  },
+);
+
+export const messages = mysqlTable(
+  "message",
+  {
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => v4()),
+
+    memberId: varchar("memberId", { length: 255 }).notNull(),
+    channelId: varchar("channelId", { length: 255 }).notNull(),
+
+    content: text("content").notNull(),
+    fileUrl: varchar("fileUrl", { length: 255 }),
+
+    createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
+      .notNull()
+      .$defaultFn(() => new Date()),
+
+    editedAt: timestamp("editedAt", { mode: "date", fsp: 3 }),
+  },
+  (message) => {
+    return {
+      memberIdx: index("memberIdx").on(message.memberId),
+      channelIdx: index("channelIdx").on(message.channelId),
     };
   },
 );
