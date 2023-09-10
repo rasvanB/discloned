@@ -48,7 +48,7 @@ const ServerInviteModal = () => {
     if (!invite && modal.type === "inviteMember") {
       mutate(modal.state.guildId);
     }
-  }, [inviteLoading, invite, modal.type]);
+  }, [inviteLoading, invite, modal.type, modal.state?.guildId, mutate]);
 
   const loading = inviteLoading || createInviteLoading;
 
