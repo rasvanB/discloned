@@ -28,33 +28,49 @@ model channel {
   id        String       @id @db.VarChar(255)
   name      String       @db.VarChar(255)
   guildId   String       @db.VarChar(255)
+  guild     guild        @relation(fields: [guildId], references: [id])
   type      channel_type @default(text)
   createdAt DateTime     @db.Timestamp(3)
+  message   message[]
 
   @@unique([guildId, name], map: "unique")
   @@index([guildId], map: "guildIdx")
 }
 
 model guild {
-  id        String   @id @db.VarChar(255)
-  name      String   @db.VarChar(255)
-  image     String?  @db.VarChar(255)
-  ownerId   String   @db.VarChar(255)
-  createdAt DateTime @default(dbgenerated("(now())")) @db.Timestamp(3)
+  id    String  @id @db.VarChar(255)
+  name  String  @db.VarChar(255)
+  image String? @db.VarChar(255)
+
+  ownerId String @db.VarChar(255)
+  owner   user   @relation(fields: [ownerId], references: [id])
+
+  createdAt DateTime  @default(dbgenerated("(now())")) @db.Timestamp(3)
+  member    member[]
+  invite    invite[]
+  channel   channel[]
+
+  @@index([ownerId], map: "ownerIdx")
 }
 
 model invite {
   id        String   @id @db.VarChar(255)
   guildId   String   @db.VarChar(255)
+  guild     guild    @relation(fields: [guildId], references: [id])
   createdAt DateTime @db.Timestamp(3)
+
+  @@index([guildId], map: "guildIdx")
 }
 
 model member {
   id       String      @id @db.VarChar(255)
   userId   String      @db.VarChar(255)
+  user     user        @relation(fields: [userId], references: [id])
   guildId  String      @db.VarChar(255)
+  guild    guild       @relation(fields: [guildId], references: [id])
   role     member_role @default(member)
   joinedAt DateTime    @db.Timestamp(3)
+  message  message[]
 
   @@unique([userId, guildId], map: "unique")
   @@index([guildId], map: "guildIdx")
@@ -73,12 +89,16 @@ model user {
   emailVerified  DateTime? @db.Timestamp(3)
   hashedPassword String?   @db.VarChar(255)
   image          String?   @db.VarChar(255)
+  guild          guild[]
+  member         member[]
 }
 
 model message {
   id        String    @id @db.VarChar(255)
   memberId  String    @db.VarChar(255)
+  member    member    @relation(fields: [memberId], references: [id])
   channelId String    @db.VarChar(255)
+  channel   channel   @relation(fields: [channelId], references: [id])
   content   String    @db.Text
   fileUrl   String?   @db.VarChar(255)
   createdAt DateTime  @db.Timestamp(3)
