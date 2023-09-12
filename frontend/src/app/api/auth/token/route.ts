@@ -9,9 +9,6 @@ export async function GET(req: NextRequest) {
   if (!sessionToken) {
     return NextResponse.json({ error: "No token" }, { status: 401 });
   }
-
-  console.log("sessionToken", sessionToken);
-
   return NextResponse.json({
     sessionToken,
   });

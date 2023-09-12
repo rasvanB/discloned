@@ -15,7 +15,7 @@ export default async function HomeLayout({
     <div className="w-screen h-screen flex">
       <Toaster />
       <ServerNav />
-      <div>{children}</div>
+      {children}
     </div>
   );
 }
