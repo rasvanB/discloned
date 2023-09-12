@@ -10,10 +10,12 @@ import {
   createUser,
   deleteGuild,
   deleteGuildMember,
+  getChannelMessages,
   getGuildChannels,
   getGuildMember,
   getGuildMembers,
   getInvite,
+  getMember,
   getServerInvite,
   getUserByEmail,
   getUserGuildById,
@@ -175,6 +177,34 @@ export const appRouter = router({
         });
       }
     }),
+  getMemberById: protectedProcedure
+    .input(z.string().nonempty())
+    .query(async ({ input, ctx }) => {
+      try {
+        return await getMember(input);
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong getting member info",
+          cause: error,
+        });
+      }
+    }),
+  getCurrentServerMember: protectedProcedure
+    .input(z.string().nonempty())
+    .query(async ({ input, ctx }) => {
+      try {
+        return await getGuildMember(input, ctx.user.id);
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong getting member info",
+          cause: error,
+        });
+      }
+    }),
   deleteServer: protectedProcedure
     .input(z.string().nonempty())
     .mutation(async ({ input, ctx }) => {
@@ -286,6 +316,26 @@ export const appRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Something went wrong adding member to guild",
+          cause: error,
+        });
+      }
+    }),
+  getChannelMessages: protectedProcedure
+    .input(
+      z.object({
+        channelId: z.string().nonempty(),
+        limit: z.number().default(20),
+        offset: z.number().default(0),
+      }),
+    )
+    .query(async ({ input }) => {
+      try {
+        return await getChannelMessages(input.channelId, input.limit);
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong getting channel messages",
           cause: error,
         });
       }

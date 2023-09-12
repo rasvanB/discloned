@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db } from ".";
 import {
   channels,
@@ -6,6 +6,7 @@ import {
   guilds,
   invites,
   members,
+  messages,
   uploadedImages,
   users,
 } from "./schema";
@@ -25,6 +26,8 @@ type GuildSelect = typeof guilds.$inferSelect;
 type ChannelInsert = typeof channels.$inferInsert;
 type UserInsert = typeof users.$inferInsert;
 type MemberInsert = typeof members.$inferInsert;
+
+export type MessageSelect = typeof messages.$inferSelect;
 
 export async function insertGuildToDb(input: GuildInsert) {
   try {
@@ -312,6 +315,36 @@ export async function getInvite(inviteId: string) {
   }
 }
 
+export async function getMember(memberId: string) {
+  try {
+    const member = await db.query.members.findFirst({
+      where(fields, { eq }) {
+        return eq(fields.id, memberId);
+      },
+      columns: {
+        id: false,
+        guildId: false,
+        userId: false,
+        role: false,
+        joinedAt: false,
+      },
+      with: {
+        user: {
+          columns: {
+            emailVerified: false,
+            hashedPassword: false,
+            email: false,
+            id: false,
+          },
+        },
+      },
+    });
+    return member?.user || null;
+  } catch (error) {
+    throw new Error("Something went wrong while getting member");
+  }
+}
+
 export async function addMemberToGuild(guildId: string, userId: string) {
   try {
     await db
@@ -320,5 +353,19 @@ export async function addMemberToGuild(guildId: string, userId: string) {
       .execute();
   } catch (error) {
     throw new Error("Something went wrong while adding member to guild");
+  }
+}
+
+export async function getChannelMessages(channelId: string, limit: number) {
+  try {
+    return await db
+      .select()
+      .from(messages)
+      .where(eq(messages.channelId, channelId))
+      .orderBy(desc(messages.createdAt))
+      .limit(limit)
+      .execute();
+  } catch (error) {
+    throw new Error("Something went wrong while getting channel messages");
   }
 }
