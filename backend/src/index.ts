@@ -36,7 +36,7 @@ type SocketData = {
 
 const messageBodySchema = z.object({
   memberId: z.string().nonempty(),
-  content: z.string().nonempty(),
+  content: z.string().nonempty().max(2000),
   channelId: z.string().nonempty(),
   fileUrl: z.string().optional(),
 });
@@ -68,8 +68,6 @@ io.use(async (socket, next) => {
       email: userJWT.email,
       picture: userJWT.picture,
     };
-
-    console.log("USER FROM THE SERVER", userJWT);
   } catch (e) {
     return next(new Error("invalid token"));
   }
@@ -77,14 +75,55 @@ io.use(async (socket, next) => {
   next();
 });
 
-app.post("/messages", async (req, res) => {
+const useAuth = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  const bearerToken = req.headers.authorization.split("Bearer ")[1];
+
+  if (!bearerToken) {
+    return res.status(401).json({
+      error: "unauthorized",
+    });
+  }
+
+  try {
+    const userJWT = await decode({
+      token: bearerToken,
+      secret: process.env.AUTH_SECRET!,
+    });
+
+    if (!userJWT || Date.now() > (userJWT.exp as number) * 1000) {
+      return res.status(401).json({
+        error: "unauthorized",
+      });
+    }
+    console.log(userJWT);
+
+    res.locals.user = {
+      id: userJWT.sub,
+      name: userJWT.name,
+      email: userJWT.email,
+    };
+  } catch (error) {
+    return res.status(401).json({
+      error: "unauthorized",
+    });
+  }
+  next();
+};
+
+app.post("/messages", useAuth, async (req, res) => {
   const result = messageBodySchema.safeParse(req.body);
+
   if (!result.success) {
     return res.status(400).json({
       error: "invalid message body",
     });
   }
 
+  console.log(result.data);
   const { memberId, content, channelId, fileUrl } = result.data;
 
   try {
