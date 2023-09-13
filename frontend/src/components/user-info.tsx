@@ -2,6 +2,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { Avatar } from "./ui/avatar";
 import Image from "next/image";
 import UserSettings from "./user-settings";
+import { DEFAULT_USER_IMAGE_SRC } from "@/utils/constants";
 
 const UserInfo = async () => {
   const session = await getServerAuthSession();
@@ -11,7 +12,7 @@ const UserInfo = async () => {
     <div className="h-14 gap-2 items-center border-t-[1px] border-border/60 flex px-2 leading-none bottom-0 left-0 absolute w-full z-10 bg-card">
       <Avatar className="w-[35px] h-auto">
         <Image
-          src={session.user.image}
+          src={session.user.image || DEFAULT_USER_IMAGE_SRC}
           alt={session.user.name}
           width={40}
           height={40}

@@ -1,7 +1,8 @@
 "use client";
 
 import { trpc } from "@/app/_trpc/client";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import Image from "next/image";
+import { DEFAULT_USER_IMAGE_SRC } from "@/utils/constants";
 
 const MemberList = ({ guildId }: { guildId: string }) => {
   const { data, isLoading } = trpc.getMembersForGuild.useQuery(guildId, {
@@ -24,12 +25,14 @@ const MemberList = ({ guildId }: { guildId: string }) => {
           return (
             <div key={member.id} className="flex items-center mt-2 gap-2">
               {/*TODO: ADD DEFAULT USER IMAGE / MAYBE TO DB SCHEMA AS DEFAULT VALUE THO */}
-              <Avatar className={"w-[30px] h-[30px]"}>
-                <AvatarImage
-                  src={member.user.image || "no_user_image"}
-                  referrerPolicy={"no-referrer"}
-                />
-              </Avatar>
+              <Image
+                width={30}
+                height={30}
+                alt={"user_avatar"}
+                className={"rounded-full w-[30px] h-[30px]"}
+                src={member.user.image || DEFAULT_USER_IMAGE_SRC}
+                referrerPolicy={"no-referrer"}
+              />
               <span className={"font-regular truncate flex-grow-0"}>
                 {member.user.name}
               </span>
