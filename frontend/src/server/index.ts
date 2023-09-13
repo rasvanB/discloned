@@ -1,6 +1,11 @@
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { protectedProcedure, publicProcedure, router } from "./trpc";
+import {
+  protectedProcedure,
+  publicProcedure,
+  router,
+  useSessionToken,
+} from "./trpc";
 import { TRPCError } from "@trpc/server";
 import {
   addMemberToGuild,
@@ -10,6 +15,7 @@ import {
   createUser,
   deleteGuild,
   deleteGuildMember,
+  getChannelById,
   getChannelMessages,
   getGuildChannels,
   getGuildMember,
@@ -23,6 +29,10 @@ import {
   insertGuildToDb,
 } from "@/db/queries";
 import { randomUUID } from "crypto";
+import axios from "axios";
+import getBaseUrl from "@/utils/getBaseUrl";
+import { encode, getToken } from "next-auth/jwt";
+import { env } from "@/env.mjs";
 
 export type AppRouter = typeof appRouter;
 
@@ -336,6 +346,44 @@ export const appRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Something went wrong getting channel messages",
+          cause: error,
+        });
+      }
+    }),
+  getChannelInfo: protectedProcedure
+    .input(z.string().nonempty())
+    .query(async ({ input }) => {
+      try {
+        return await getChannelById(input);
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong getting channel info",
+          cause: error,
+        });
+      }
+    }),
+  sendMessage: protectedProcedure
+    .use(useSessionToken)
+    .input(
+      z.object({
+        channelId: z.string().nonempty(),
+        content: z.string().nonempty().max(2000),
+        memberId: z.string().nonempty(),
+        fileUrl: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        await axios.post("http://localhost:3030/messages", input, {
+          headers: {
+            Authorization: `Bearer ${ctx.sessionToken}`,
+          },
+        });
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went sending message",
           cause: error,
         });
       }
