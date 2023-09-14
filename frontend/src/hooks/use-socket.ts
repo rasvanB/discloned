@@ -5,11 +5,63 @@ import { useEffect, useState } from "react";
 import { MessageSelect } from "@/db/queries";
 import { getQueryKey } from "@trpc/react-query";
 import { trpc } from "@/app/_trpc/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { queryClient } from "@/app/_trpc/provider";
+
+export const addMessageToCache = async (message: MessageSelect) => {
+  const messagesQueryKey = getQueryKey(
+    trpc.getChannelMessages,
+    {
+      channelId: message.channelId,
+    },
+    "query",
+  );
+
+  await queryClient.setQueryData(messagesQueryKey, (oldData) => {
+    if (!oldData) return [message];
+    return [message, ...(oldData as Array<unknown>)];
+  });
+};
+
+const updateMessageInCache = async (message: MessageSelect) => {
+  const messagesQueryKey = getQueryKey(
+    trpc.getChannelMessages,
+    {
+      channelId: message.channelId,
+    },
+    "query",
+  );
+
+  await queryClient.setQueryData(messagesQueryKey, (oldData) => {
+    if (!oldData) return [];
+    return (oldData as Array<unknown>).map((msg) => {
+      if ((msg as MessageSelect).id === message.id) {
+        return message;
+      }
+      return msg;
+    });
+  });
+};
+
+const deleteMessageFromCache = async (messageId: string, channelId: string) => {
+  const messagesQueryKey = getQueryKey(
+    trpc.getChannelMessages,
+    {
+      channelId,
+    },
+    "query",
+  );
+
+  await queryClient.setQueryData(messagesQueryKey, (oldData) => {
+    if (!oldData) return [];
+    return (oldData as Array<unknown>).filter(
+      (msg) => (msg as MessageSelect).id !== messageId,
+    );
+  });
+};
 
 const useSocket = ({ channelId }: { channelId: string }) => {
-  const queryClient = useQueryClient();
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     if (socket) return;
@@ -36,31 +88,24 @@ const useSocket = ({ channelId }: { channelId: string }) => {
     if (!socket) return;
 
     socket.on("connect", () => {
-      console.log("connected");
+      setIsConnected(true);
       socket.emit("subscribe", channelId);
     });
 
-    socket.on("message", (message) => {
-      console.log("message", message);
+    socket.on("disconnect", () => {
+      setIsConnected(false);
     });
 
     socket.on("new-message", async (message) => {
-      const msg = message as MessageSelect;
+      await addMessageToCache(message);
+    });
 
-      const messagesQueryKey = getQueryKey(
-        trpc.getChannelMessages,
-        {
-          channelId,
-        },
-        "query",
-      );
+    socket.on("message-update", async (message) => {
+      await updateMessageInCache(message);
+    });
 
-      await queryClient.setQueryData(messagesQueryKey, (oldData) => {
-        if (!oldData) return [msg];
-        return [msg, ...(oldData as Array<unknown>)];
-      });
-
-      console.log("new-message", message);
+    socket.on("message-delete", async (messageId) => {
+      await deleteMessageFromCache(messageId, channelId);
     });
 
     return () => {
@@ -68,7 +113,10 @@ const useSocket = ({ channelId }: { channelId: string }) => {
     };
   }, [socket, channelId, queryClient]);
 
-  return socket;
+  return {
+    socket,
+    isConnected,
+  };
 };
 
 export default useSocket;
