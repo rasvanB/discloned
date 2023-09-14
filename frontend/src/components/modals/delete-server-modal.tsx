@@ -10,7 +10,7 @@ import {
 import { useModal } from "@/hooks/use-modal";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/app/_trpc/client";
-import { RotateCw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getQueryKey } from "@trpc/react-query";
 import { queryClient } from "@/app/_trpc/provider";
@@ -54,9 +54,7 @@ const DeleteServerModal = () => {
               mutate(modal.state.guildId);
             }}
           >
-            {isLoading && (
-              <RotateCw size={16} className={"mr-2 animate-spin"} />
-            )}
+            {isLoading && <Loader2 size={16} className={"mr-2 animate-spin"} />}
             {isLoading ? "Deleting..." : "Delete"}
           </Button>
         </div>

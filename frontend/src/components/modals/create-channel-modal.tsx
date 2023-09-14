@@ -23,7 +23,7 @@ import AuthAlert from "@/components/auth-alert";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RotateCw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { trpc } from "@/app/_trpc/client";
 import {
   Popover,
@@ -109,7 +109,11 @@ const CreateChannelModal = () => {
               <DialogTitle>Create a Channel</DialogTitle>
             </DialogHeader>
             {errorMessage && (
-              <AuthAlert variant="destructive" message={errorMessage} />
+              <AuthAlert
+                variant="destructive"
+                message={errorMessage}
+                className={"mb-2"}
+              />
             )}
             <div className="space-y-2">
               <FormField
@@ -181,7 +185,7 @@ const CreateChannelModal = () => {
             <DialogFooter>
               <Button type="submit" disabled={createChannelMutation.isLoading}>
                 {createChannelMutation.isLoading && (
-                  <RotateCw size={15} className="animate-spin mr-2" />
+                  <Loader2 size={15} className="animate-spin mr-2" />
                 )}
                 {createChannelMutation.isLoading
                   ? "Creating channel..."

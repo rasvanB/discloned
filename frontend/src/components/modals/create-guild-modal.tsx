@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusIcon, RotateCw } from "lucide-react";
+import { Loader2, PlusIcon } from "lucide-react";
 import { Button, buttonVariants } from "../ui/button";
 import {
   Dialog,
@@ -169,7 +169,11 @@ const CreateGuildModal = () => {
               </DialogDescription>
             </DialogHeader>
             {errorMessage && (
-              <AuthAlert variant="destructive" message={errorMessage} />
+              <AuthAlert
+                variant="destructive"
+                message={errorMessage}
+                className={"mb-2"}
+              />
             )}
             <div>
               <Label className="text-right">Server Icon</Label>
@@ -202,7 +206,7 @@ const CreateGuildModal = () => {
             <DialogFooter>
               <Button type="submit" disabled={createGuildMutation.isLoading}>
                 {createGuildMutation.isLoading && (
-                  <RotateCw size={15} className="animate-spin mr-2" />
+                  <Loader2 size={15} className="animate-spin mr-2" />
                 )}
                 {createGuildMutation.isLoading
                   ? "Creating server..."
