@@ -30,9 +30,6 @@ import {
 } from "@/db/queries";
 import { randomUUID } from "crypto";
 import axios from "axios";
-import getBaseUrl from "@/utils/getBaseUrl";
-import { encode, getToken } from "next-auth/jwt";
-import { env } from "@/env.mjs";
 
 export type AppRouter = typeof appRouter;
 
@@ -189,7 +186,7 @@ export const appRouter = router({
     }),
   getMemberById: protectedProcedure
     .input(z.string().nonempty())
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input }) => {
       try {
         return await getMember(input);
       } catch (error) {
@@ -381,6 +378,67 @@ export const appRouter = router({
           },
         });
       } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went sending message",
+          cause: error,
+        });
+      }
+    }),
+  updateMessage: protectedProcedure
+    .use(useSessionToken)
+    .input(
+      z.object({
+        messageId: z.string().nonempty(),
+        memberId: z.string().nonempty(),
+        content: z.string().nonempty().max(2000),
+        channelId: z.string().nonempty(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        await axios.patch(
+          `http://localhost:3030/messages/${input.messageId}`,
+          input,
+          {
+            headers: {
+              Authorization: `Bearer ${ctx.sessionToken}`,
+            },
+          },
+        );
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went sending message",
+          cause: error,
+        });
+      }
+    }),
+  deleteMessage: protectedProcedure
+    .use(useSessionToken)
+    .input(
+      z.object({
+        messageId: z.string().nonempty(),
+        memberId: z.string().nonempty(),
+        channelId: z.string().nonempty(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        await axios.delete(
+          `http://localhost:3030/messages/${input.messageId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${ctx.sessionToken}`,
+            },
+            data: {
+              memberId: input.memberId,
+              channelId: input.channelId,
+            },
+          },
+        );
+      } catch (error) {
+        console.log(error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Something went sending message",
