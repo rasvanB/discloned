@@ -123,7 +123,6 @@ app.post("/messages", useAuth, async (req, res) => {
     });
   }
 
-  console.log(result.data);
   const { memberId, content, channelId, fileUrl } = result.data;
 
   try {
@@ -166,6 +165,146 @@ app.post("/messages", useAuth, async (req, res) => {
     });
   } catch (e) {
     console.log(e);
+    return res.status(500).json({
+      error: "internal server error",
+    });
+  }
+});
+
+const messageUpdateSchema = z.object({
+  memberId: z.string().nonempty(),
+  content: z.string().nonempty().max(2000),
+  channelId: z.string().nonempty(),
+  fileUrl: z.string().nullable(),
+});
+
+app.patch("/messages/:id", useAuth, async (req, res) => {
+  const result = messageUpdateSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "invalid message body",
+    });
+  }
+
+  const { memberId, content, channelId, fileUrl } = result.data;
+  const messageId = req.params.id;
+
+  try {
+    const member = await prisma.member.findUnique({
+      where: {
+        id: memberId,
+      },
+    });
+
+    if (!member) {
+      return res.status(400).json({
+        error: "not member of channel",
+      });
+    }
+
+    if (member.role === "admin" || member.role === "owner") {
+      const updatedMessage = await prisma.message.update({
+        where: {
+          id: messageId,
+        },
+        data: {
+          content,
+          fileUrl,
+          editedAt: new Date(),
+        },
+      });
+
+      io.to(channelId).emit("message-update", updatedMessage);
+
+      return res.status(200).json({
+        message: "message updated",
+      });
+    }
+
+    const updatedMessage = await prisma.message.update({
+      where: {
+        id: messageId,
+        memberId,
+      },
+      data: {
+        content,
+        fileUrl,
+        editedAt: new Date(),
+      },
+    });
+
+    io.to(channelId).emit("message-update", updatedMessage);
+
+    return res.status(200).json({
+      message: "message updated",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: "internal server error",
+    });
+  }
+});
+
+const messageDeleteSchema = z.object({
+  memberId: z.string().nonempty(),
+  channelId: z.string().nonempty(),
+});
+
+app.delete("/messages/:id", useAuth, async (req, res) => {
+  const result = messageDeleteSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "invalid message body",
+    });
+  }
+
+  const { memberId, channelId } = result.data;
+  const messageId = req.params.id;
+
+  try {
+    const member = await prisma.member.findUnique({
+      where: {
+        id: memberId,
+      },
+    });
+
+    if (!member) {
+      return res.status(400).json({
+        error: "not member of channel",
+      });
+    }
+
+    if (member.role === "admin" || member.role === "owner") {
+      await prisma.message.delete({
+        where: {
+          id: messageId,
+        },
+      });
+
+      io.to(channelId).emit("message-delete", messageId);
+
+      return res.status(200).json({
+        message: "message deleted",
+      });
+    }
+
+    await prisma.message.delete({
+      where: {
+        id: messageId,
+        memberId,
+      },
+    });
+
+    io.to(channelId).emit("message-delete", messageId);
+
+    return res.status(200).json({
+      message: "message deleted",
+    });
+  } catch (error) {
+    console.log(error);
     return res.status(500).json({
       error: "internal server error",
     });
