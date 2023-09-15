@@ -39,9 +39,7 @@ const InvitePage = async ({
         <div className={"text-lg font-medium"}>{inviteInfo.guild.name}</div>
         <div className={"text-sm text-muted-foreground"}>
           members:
-          <span className={"text-sm text-primary-foreground ml-2"}>
-            {inviteInfo.memberCount}
-          </span>
+          <span className={"text-sm ml-2"}>{inviteInfo.memberCount}</span>
         </div>
         <JoinServerButton guildId={inviteInfo.guild.id} />
       </div>

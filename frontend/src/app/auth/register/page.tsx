@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthAlert from "@/components/auth-alert";
 import { useState } from "react";
-import { RotateCw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(3).max(30),
@@ -64,7 +64,9 @@ export default function Register() {
             Register with your email and password.
           </p>
         </div>
-        {error && <AuthAlert variant="destructive" message={error} />}
+        {error && (
+          <AuthAlert variant="destructive" message={error} className={"mb-2"} />
+        )}
         <div className="space-y-1">
           <FormField
             control={form.control}
@@ -112,7 +114,7 @@ export default function Register() {
           disabled={registerMutation.isLoading}
         >
           {registerMutation.isLoading && (
-            <RotateCw size={20} className="animate-spin mr-2" />
+            <Loader2 size={20} className="animate-spin mr-2" />
           )}
           {registerMutation.isLoading ? "Registering..." : "Register"}
         </Button>

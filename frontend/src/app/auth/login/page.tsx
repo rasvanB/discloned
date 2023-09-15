@@ -18,7 +18,7 @@ import { DiscordIcon, GoogleIcon } from "@/components/icons";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AuthAlert from "@/components/auth-alert";
-import { RotateCw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -60,7 +60,9 @@ export default function Login() {
             Sign in with your email and password.
           </p>
         </div>
-        {error && <AuthAlert variant="destructive" message={error} />}
+        {error && (
+          <AuthAlert variant="destructive" message={error} className={"mb-2"} />
+        )}
         <div className="space-y-1">
           <FormField
             control={form.control}
@@ -90,7 +92,7 @@ export default function Login() {
           />
         </div>
         <Button type="submit" className="w-full mt-2" disabled={isLoading}>
-          {isLoading && <RotateCw size={20} className="animate-spin mr-2" />}
+          {isLoading && <Loader2 size={20} className="animate-spin mr-2" />}
           {isLoading ? "Logging in..." : "Log in"}
         </Button>
       </form>

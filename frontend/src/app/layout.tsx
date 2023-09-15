@@ -16,7 +16,7 @@ export default async function RootLayout({
   const session = await getServerAuthSession();
   return (
     <html lang="en">
-      <body className={inter.className + " bg-background"}>
+      <body className={inter.className + " bg-background selection:bg-primary"}>
         <ThemeProvider attribute="class">
           <NextAuthSessionProvider session={session}>
             <TRPCProvider>{children}</TRPCProvider>
