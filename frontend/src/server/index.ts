@@ -18,7 +18,7 @@ import {
   getChannelById,
   getChannelMessages,
   getGuildChannels,
-  getGuildMember,
+  getGuildMemberByUserId,
   getGuildMembers,
   getInvite,
   getMember,
@@ -27,6 +27,7 @@ import {
   getUserGuildById,
   getUserGuilds,
   insertGuildToDb,
+  updateMember,
 } from "@/db/queries";
 import { randomUUID } from "crypto";
 import axios from "axios";
@@ -202,7 +203,7 @@ export const appRouter = router({
     .input(z.string().nonempty())
     .query(async ({ input, ctx }) => {
       try {
-        return await getGuildMember(input, ctx.user.id);
+        return (await getGuildMemberByUserId(input, ctx.user.id)) || null;
       } catch (error) {
         console.log(error);
         throw new TRPCError({
@@ -216,10 +217,8 @@ export const appRouter = router({
     .input(z.string().nonempty())
     .mutation(async ({ input, ctx }) => {
       const { user } = ctx;
-      const member = await getGuildMember(input, user.id);
+      const member = await getGuildMemberByUserId(input, user.id);
 
-      console.log(input);
-      console.log(member);
       if (!member) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -249,7 +248,7 @@ export const appRouter = router({
     .input(z.string().nonempty())
     .mutation(async ({ input, ctx }) => {
       const { user } = ctx;
-      const member = await getGuildMember(input, user.id);
+      const member = await getGuildMemberByUserId(input, user.id);
 
       if (!member) {
         throw new TRPCError({
@@ -259,7 +258,7 @@ export const appRouter = router({
       }
 
       try {
-        await deleteGuildMember(input);
+        await deleteGuildMember(member.id);
       } catch (error) {
         console.log(error);
         throw new TRPCError({
@@ -298,6 +297,92 @@ export const appRouter = router({
         });
       }
     }),
+  changeMemberRole: protectedProcedure
+    .input(
+      z.object({
+        memberId: z.string().nonempty(),
+        role: z.enum(["owner", "admin", "member"]),
+        guildId: z.string().nonempty(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { user } = ctx;
+      const member = await getGuildMemberByUserId(input.guildId, user.id);
+
+      if (!member) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Not a member of this guild",
+        });
+      }
+
+      if (input.role === "owner") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot change to owner role",
+        });
+      }
+
+      if (member.role !== "owner") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authorized to change role",
+        });
+      }
+
+      try {
+        await updateMember(input.memberId, {
+          role: input.role,
+        });
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong changing member role",
+          cause: error,
+        });
+      }
+    }),
+  kickMember: protectedProcedure
+    .input(
+      z.object({
+        memberId: z.string().nonempty(),
+        guildId: z.string().nonempty(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { user } = ctx;
+      const currentMember = await getGuildMemberByUserId(
+        input.guildId,
+        user.id,
+      );
+
+      if (!currentMember) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Not a member of this guild",
+        });
+      }
+
+      if (currentMember.role !== "owner" && currentMember.role !== "admin") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authorized to kick member",
+        });
+      }
+
+      try {
+        await deleteGuildMember(input.memberId);
+      } catch (error) {
+        console.log(error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went kicking member",
+          cause: error,
+        });
+      }
+    }),
+
   getInviteInfo: protectedProcedure
     .input(z.string().nonempty())
     .query(async ({ input }) => {
@@ -393,6 +478,7 @@ export const appRouter = router({
         memberId: z.string().nonempty(),
         content: z.string().nonempty().max(2000),
         channelId: z.string().nonempty(),
+        fileUrl: z.string().nullable(),
       }),
     )
     .mutation(async ({ input, ctx }) => {

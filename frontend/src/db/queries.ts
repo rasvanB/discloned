@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql, inArray, not } from "drizzle-orm";
 import { db } from ".";
 import {
   channels,
@@ -151,6 +151,18 @@ export async function getGuildChannels(guildId: string, userId: string) {
   }
 }
 
+export async function getChannelById(channelId: string) {
+  try {
+    return await db.query.channels.findFirst({
+      where(fields, { eq }) {
+        return eq(fields.id, channelId);
+      },
+    });
+  } catch (error) {
+    throw new Error("Something went wrong while getting channel by id");
+  }
+}
+
 export async function createUser(input: UserInsert) {
   try {
     await db.insert(users).values(input);
@@ -223,6 +235,7 @@ export async function getGuildMembers(guildId: string) {
         user: {
           name: users.name,
           image: users.image,
+          email: users.email,
         },
       })
       .from(members)
@@ -233,7 +246,7 @@ export async function getGuildMembers(guildId: string) {
   }
 }
 
-export async function getGuildMember(guildId: string, userId: string) {
+export async function getGuildMemberByUserId(guildId: string, userId: string) {
   try {
     return await db.query.members.findFirst({
       where(fields, { eq, and }) {
@@ -255,9 +268,12 @@ export async function deleteGuild(guildId: string) {
   }
 }
 
-export async function deleteGuildMember(guildId: string) {
+export async function deleteGuildMember(memberId: string) {
   try {
-    await db.delete(members).where(eq(members.guildId, guildId)).execute();
+    await db
+      .delete(members)
+      .where(and(eq(members.id, memberId), not(eq(members.role, "owner"))))
+      .execute();
   } catch (error) {
     throw new Error("Something went wrong while deleting guild member");
   }
@@ -367,5 +383,20 @@ export async function getChannelMessages(channelId: string, limit: number) {
       .execute();
   } catch (error) {
     throw new Error("Something went wrong while getting channel messages");
+  }
+}
+
+export async function updateMember(
+  memberId: string,
+  input: Partial<MemberInsert>,
+) {
+  try {
+    await db
+      .update(members)
+      .set(input)
+      .where(eq(members.id, memberId))
+      .execute();
+  } catch (error) {
+    throw new Error("Something went wrong while updating member");
   }
 }
