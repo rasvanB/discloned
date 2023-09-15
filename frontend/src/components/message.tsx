@@ -7,49 +7,147 @@ import Linkify from "linkify-react";
 
 import "./message.css";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash, X } from "lucide-react";
+import { Loader2, Pencil, Trash, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { chatInputSchema } from "@/components/chat-input";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { clsx } from "clsx";
 import { DEFAULT_USER_IMAGE_SRC } from "@/utils/constants";
+import { formatMessageDateTime } from "@/utils/date-time";
+import { z } from "zod";
+import AttachmentPreview from "@/components/attachment-preview";
+import MessageAttachment from "@/components/message-attachment";
 
-const relativeDateFormatter = new Intl.RelativeTimeFormat("en", {
-  numeric: "auto",
+const messageSchema = z.object({
+  message: z.string().nonempty().max(2000),
+  fileUrl: z.string().nullable(),
 });
 
-const dateFormatter = new Intl.DateTimeFormat("en", {
-  dateStyle: "short",
-});
+type MessageSchema = z.infer<typeof messageSchema>;
 
-const timeFormatter = new Intl.DateTimeFormat("en", {
-  timeStyle: "short",
-});
+const MessageEditForm = ({
+  message,
+  memberId,
+  onCancelEdit,
+  onSubmitSuccess,
+}: {
+  message: ProcedureOutputs["getChannelMessages"][number];
+  memberId: string;
+  onCancelEdit: () => void;
+  onSubmitSuccess: () => void;
+}) => {
+  const form = useForm({
+    resolver: zodResolver(messageSchema),
+    defaultValues: {
+      message: message.content,
+      fileUrl: message.fileUrl,
+    },
+  });
 
-function capitalize(string: string) {
-  if (!/^[a-zA-Z]/.test(string)) return string;
-  return string.charAt(0).toUpperCase() + string.slice(1);
-}
+  const updateMessageMutation = trpc.updateMessage.useMutation({
+    onSuccess: () => {
+      onCancelEdit();
+    },
+  });
 
-function formatMessageDate(date: Date) {
-  const today = new Date().setHours(24, 59, 59, 999);
-  const daysPassed = Math.floor(
-    (today - date.getTime()) / (1000 * 60 * 60 * 24),
+  const onSubmit: SubmitHandler<MessageSchema> = async (data) => {
+    if (data.message === message.content && data.fileUrl === message.fileUrl) {
+      onCancelEdit();
+      return;
+    }
+    await updateMessageMutation.mutateAsync({
+      messageId: message.id,
+      content: data.message,
+      fileUrl: data.fileUrl,
+      memberId,
+      channelId: message.channelId,
+    });
+    onSubmitSuccess();
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event: any) => {
+      if (event.key === "Escape" || event.keyCode === 27) {
+        onCancelEdit();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keyDown", handleKeyDown);
+  }, []);
+
+  const shouldBeDisabled =
+    form.formState.isSubmitting || updateMessageMutation.isLoading;
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <input type="submit" hidden disabled={shouldBeDisabled} />
+        <FormField
+          control={form.control}
+          name="message"
+          render={({ field }) => (
+            <FormItem className={"w-full"}>
+              <FormControl>
+                <Input
+                  placeholder={"Edit message"}
+                  className={
+                    "text-[16px] mt-2 break-words py-2 h-[35px] scrollbar-none shadow-none"
+                  }
+                  {...field}
+                  autoComplete={"off"}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="fileUrl"
+          render={({ field }) => (
+            <FormItem className={"w-full mt-1"}>
+              <FormControl>
+                {field.value && (
+                  <AttachmentPreview
+                    fileName={field.value}
+                    onClose={() => {
+                      form.setValue("fileUrl", null);
+                    }}
+                  />
+                )}
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <div className={"text-xs"}>
+          escape to{" "}
+          <Button
+            variant={"link"}
+            size={"sm"}
+            className={"px-1 text-xs"}
+            onClick={onCancelEdit}
+          >
+            cancel
+          </Button>
+          • enter to{" "}
+          <Button
+            variant={"link"}
+            size={"sm"}
+            className={"px-1 text-xs"}
+            type={"submit"}
+            autoFocus={true}
+            disabled={shouldBeDisabled}
+          >
+            edit
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
-  if (daysPassed > 2) return dateFormatter.format(date);
-  return relativeDateFormatter.format(-1 * daysPassed, "day");
-}
-
-function formatMessageTime(date: Date) {
-  return timeFormatter.format(date);
-}
-
-function formatMessageDateTime(date: Date) {
-  return `${capitalize(formatMessageDate(date))} at ${formatMessageTime(date)}`;
-}
+};
 
 const Message = ({
   message,
@@ -60,18 +158,6 @@ const Message = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-
-  const form = useForm({
-    resolver: zodResolver(chatInputSchema),
-    defaultValues: {
-      message: message.content,
-    },
-  });
-
-  const onSubmit = form.handleSubmit((values) => {
-    // TODO: Here update message mutation
-    console.log(values.message);
-  });
 
   const onCancelEdit = () => {
     setIsEditing(false);
@@ -86,23 +172,11 @@ const Message = ({
     },
   );
 
-  useEffect(() => {
-    const handleKeyDown = (event: any) => {
-      if (event.key === "Escape" || event.keyCode === 27) {
-        onCancelEdit();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => window.removeEventListener("keyDown", handleKeyDown);
-  }, []);
-
-  useEffect(() => {
-    if (isEditing) {
-      form.setValue("message", message.content);
-    }
-  }, [isEditing]);
+  const deleteMessageMutation = trpc.deleteMessage.useMutation({
+    onSuccess: () => {
+      onCancelEdit();
+    },
+  });
 
   if (!authorData || isLoading) return null;
 
@@ -130,12 +204,33 @@ const Message = ({
             variant={"outline"}
             size={"icon"}
             className={"bg-card"}
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={() => {
+              if (isEditing) {
+                onCancelEdit();
+                return;
+              }
+              setIsEditing(true);
+            }}
           >
             {isEditing ? <X size={18} /> : <Pencil size={18} />}
           </Button>
-          <Button variant={"outline"} size={"icon"} className={"bg-card"}>
-            <Trash size={18} />
+          <Button
+            variant={"outline"}
+            size={"icon"}
+            className={"bg-card"}
+            onClick={() => {
+              deleteMessageMutation.mutate({
+                messageId: message.id,
+                memberId,
+                channelId: message.channelId,
+              });
+            }}
+          >
+            {deleteMessageMutation.isLoading ? (
+              <Loader2 size={18} className={"animate-spin"} />
+            ) : (
+              <Trash size={18} />
+            )}
           </Button>
         </div>
       )}
@@ -153,54 +248,30 @@ const Message = ({
             {formatMessageDateTime(new Date(message.createdAt))}
           </span>
         </div>
-
         {isEditing ? (
-          <Form {...form}>
-            <form onSubmit={onSubmit}>
-              <FormField
-                control={form.control}
-                name="message"
-                render={({ field }) => (
-                  <FormItem className={"w-full"}>
-                    <FormControl>
-                      <Input
-                        placeholder={"Edit message"}
-                        className={
-                          "text-[16px] mt-2 break-words py-2 h-[35px] scrollbar-none shadow-none"
-                        }
-                        {...field}
-                        autoComplete={"off"}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <div className={"text-xs"}>
-                escape to{" "}
-                <Button
-                  variant={"link"}
-                  size={"sm"}
-                  className={"px-1 text-xs"}
-                  onClick={onCancelEdit}
-                >
-                  cancel
-                </Button>
-                • enter to{" "}
-                <Button variant={"link"} size={"sm"} className={"px-1 text-xs"}>
-                  edit
-                </Button>
-              </div>
-            </form>
-          </Form>
+          <MessageEditForm
+            message={message}
+            memberId={memberId}
+            onCancelEdit={onCancelEdit}
+            onSubmitSuccess={onCancelEdit}
+          />
         ) : (
-          <div className={"mt-1 message-content break-all"}>
-            <Linkify
-              options={{
-                target: "_blank",
-              }}
-            >
-              {message.content}
-            </Linkify>
+          <div className={"flex flex-col gap-2"}>
+            <div className={"mt-1 message-content break-all"}>
+              <Linkify
+                options={{
+                  target: "_blank",
+                }}
+              >
+                {message.content}
+              </Linkify>
+              {message.editedAt && (
+                <span className={"text-xs text-muted-foreground"}>
+                  {" (edited)"}
+                </span>
+              )}
+            </div>
+            {message.fileUrl && <MessageAttachment fileUrl={message.fileUrl} />}
           </div>
         )}
       </div>
