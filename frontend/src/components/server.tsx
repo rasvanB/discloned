@@ -3,6 +3,7 @@
 import { type ProcedureOutputs } from "@/app/_trpc/serverClient";
 import { ServerButton } from "./server-button";
 import { usePathname } from "next/navigation";
+import { DEFAULT_GUILD_IMAGE_SRC } from "@/utils/constants";
 
 type ServerProps = {
   server: NonNullable<ProcedureOutputs["getGuilds"]>[number];
@@ -26,10 +27,9 @@ const Server = ({ server }: ServerProps) => {
             : {}
         }
       ></div>
-      {/* TODO: Replace nope with some default image url */}
       <ServerButton
         tooltip={server.name}
-        imageUrl={server.image ? server.image.url : "nope"}
+        imageUrl={server.image ? server.image.url : DEFAULT_GUILD_IMAGE_SRC}
         className={"rounded-2xl hover:rounded-xl transition-all duration-200"}
         style={
           active

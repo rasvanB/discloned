@@ -35,7 +35,7 @@ export const ServerSideBar = async ({ serverId }: { serverId: string }) => {
   return (
     <BaseSideBar>
       <div className="h-12 p-3 border-b-[1px] border-border/60 flex items-center justify-between">
-        <p className="text-[16px] font-medium">{serverInfo.name}</p>
+        <p className="text-[16px] font-medium truncate">{serverInfo.name}</p>
         <ServerSettings userRole={user.role} guildId={serverId} />
       </div>
       {serverInfo.channels && (
@@ -45,7 +45,7 @@ export const ServerSideBar = async ({ serverId }: { serverId: string }) => {
           userRole={user.role}
         />
       )}
-      <MemberList guildId={serverId} />
+      <MemberList guildId={serverId} userRole={user.role} />
     </BaseSideBar>
   );
 };

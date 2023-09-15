@@ -105,14 +105,14 @@ const ChatAttachmentsModal = ({
           }}
         />
         <div className={"w-full flex justify-end items-center gap-2"}>
-          <Button variant={"secondary"} onClick={onClose}>
+          <Button variant={"secondary"} onClick={onModalClose}>
             Cancel
           </Button>
           {uploadedFile && (
             <Button
               onClick={() => {
                 onSuccessfulAttachment(uploadedFile);
-                onClose();
+                onModalClose();
               }}
             >
               Create Attachment

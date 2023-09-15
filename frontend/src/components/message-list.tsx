@@ -9,13 +9,15 @@ import { useEffect, useRef } from "react";
 const MessageList = ({
   initialData,
   channelId,
+  memberId,
 }: {
   initialData: ProcedureOutputs["getChannelMessages"];
   channelId: string;
+  memberId: string;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
 
-  useSocket({ channelId });
+  const { isConnected } = useSocket({ channelId });
 
   const { data } = trpc.getChannelMessages.useQuery(
     {
@@ -23,7 +25,6 @@ const MessageList = ({
     },
     {
       initialData,
-      refetchOnMount: false,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     },
@@ -39,10 +40,12 @@ const MessageList = ({
   if (!data) return null;
 
   return (
-    <div className={"flex flex-col-reverse gap-5 px-4"}>
+    <div className={"flex flex-col-reverse gap-2"}>
       <div className={"h-4"} ref={ref} />
       {data.map((message) => {
-        return <Message message={message} key={message.id} />;
+        return (
+          <Message message={message} key={message.id} memberId={memberId} />
+        );
       })}
     </div>
   );

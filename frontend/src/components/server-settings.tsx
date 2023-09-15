@@ -66,10 +66,10 @@ const ServerSettings = ({
   return (
     <>
       <LeaveServerModal />
+      <ServerInviteModal />
       {canEditServer && (
         <>
           <DeleteServerModal />
-          <ServerInviteModal />
         </>
       )}
       <DropdownMenu>

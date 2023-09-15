@@ -4,12 +4,14 @@ import { AlertTriangle, CheckCircle } from "lucide-react";
 const AuthAlert = ({
   variant,
   message,
+  className,
 }: {
   variant: "default" | "destructive";
+  className?: string;
   message: string;
 }) => {
   return (
-    <Alert variant={variant} className="mb-2">
+    <Alert variant={variant} className={className}>
       {variant === "destructive" ? (
         <AlertTriangle size={20} />
       ) : (
