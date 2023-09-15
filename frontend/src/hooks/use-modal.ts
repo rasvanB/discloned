@@ -36,6 +36,12 @@ type Modal =
   | {
       type: "chatAttachment";
       state: null;
+    }
+  | {
+      type: "manageMembers";
+      state: {
+        guildId: string;
+      };
     };
 
 type ModalStore = {
