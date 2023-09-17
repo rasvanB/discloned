@@ -6,6 +6,7 @@ import { MessageSelect } from "@/db/queries";
 import { getQueryKey } from "@trpc/react-query";
 import { trpc } from "@/app/_trpc/client";
 import { queryClient } from "@/app/_trpc/provider";
+import { env } from "@/env.mjs";
 
 export const addMessageToCache = async (message: MessageSelect) => {
   const messagesQueryKey = getQueryKey(
@@ -75,7 +76,7 @@ const useSocket = ({ channelId }: { channelId: string }) => {
 
     getSessionToken().then((token) => {
       if (!token) return;
-      const ioSocket = io("http://localhost:3030", {
+      const ioSocket = io(env.NEXT_PUBLIC_BACKEND_URL, {
         auth: {
           token,
         },

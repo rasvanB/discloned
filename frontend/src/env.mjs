@@ -13,7 +13,9 @@ export const env = createEnv({
     DISCORD_CLIENT_SECRET: z.string().nonempty(),
     UPLOADTHING_SECRET: z.string().nonempty(),
   },
-  client: {},
+  client: {
+    NEXT_PUBLIC_BACKEND_URL: z.string().nonempty(),
+  },
   runtimeEnv: {
     DATABASE_HOST: process.env.DATABASE_HOST,
     DATABASE_USERNAME: process.env.DATABASE_USERNAME,
@@ -24,5 +26,7 @@ export const env = createEnv({
     DISCORD_CLIENT_ID: process.env.DISCORD_CLIENT_ID,
     DISCORD_CLIENT_SECRET: process.env.DISCORD_CLIENT_SECRET,
     UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
+    BACKEND_URL: process.env.BACKEND_URL,
+    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
   },
 });
