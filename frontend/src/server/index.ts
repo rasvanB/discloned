@@ -31,6 +31,10 @@ import {
 } from "@/db/queries";
 import { randomUUID } from "crypto";
 import axios from "axios";
+import { env } from "@/env.mjs";
+import { db } from "@/db";
+import { messages } from "@/db/schema";
+import { and, desc, eq, gt, gte, lte } from "drizzle-orm";
 
 export type AppRouter = typeof appRouter;
 
@@ -457,7 +461,7 @@ export const appRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        await axios.post("http://localhost:3030/messages", input, {
+        await axios.post(`${env.NEXT_PUBLIC_BACKEND_URL}/messages`, input, {
           headers: {
             Authorization: `Bearer ${ctx.sessionToken}`,
           },
@@ -484,7 +488,7 @@ export const appRouter = router({
     .mutation(async ({ input, ctx }) => {
       try {
         await axios.patch(
-          `http://localhost:3030/messages/${input.messageId}`,
+          `${env.NEXT_PUBLIC_BACKEND_URL}/messages/${input.messageId}`,
           input,
           {
             headers: {
@@ -512,7 +516,7 @@ export const appRouter = router({
     .mutation(async ({ input, ctx }) => {
       try {
         await axios.delete(
-          `http://localhost:3030/messages/${input.messageId}`,
+          `${env.NEXT_PUBLIC_BACKEND_URL}/messages/${input.messageId}`,
           {
             headers: {
               Authorization: `Bearer ${ctx.sessionToken}`,
@@ -531,5 +535,40 @@ export const appRouter = router({
           cause: error,
         });
       }
+    }),
+  infiniteMessages: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).nullish(),
+        cursor: z.number().nullish(), // <-- "cursor" needs to exist, but can be any type
+        channelId: z.string().nonempty(),
+      }),
+    )
+    .query(async (opts) => {
+      const { input } = opts;
+      const limit = input.limit ?? 20;
+      const { cursor, channelId } = input;
+      console.log("CURSOR: ", cursor);
+
+      const items = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.channelId, channelId))
+        .orderBy(desc(messages.createdAt))
+        .limit(limit + 1)
+        .offset(cursor ?? 0)
+        .execute();
+
+      let nextCursor: typeof cursor | undefined = undefined;
+
+      if (items.length > limit) {
+        const nextItem = items.pop();
+        nextCursor = cursor ? cursor + limit : limit;
+      }
+
+      return {
+        items,
+        nextCursor,
+      };
     }),
 });
