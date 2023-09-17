@@ -159,6 +159,59 @@ export const messages = mysqlTable(
   },
 );
 
+export const conversations = mysqlTable(
+  "conversation",
+  {
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => generateChannelId()),
+
+    userOneId: varchar("userOneId", { length: 255 }).notNull(),
+    userTwoId: varchar("userTwoId", { length: 255 }).notNull(),
+
+    createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (conversations) => {
+    return {
+      userOneIdx: index("userOneIdx").on(conversations.userOneId),
+      userTwoIdx: index("userTwoIdx").on(conversations.userTwoId),
+      uniqueUserOneUserTwo: unique("unique").on(
+        conversations.userOneId,
+        conversations.userTwoId,
+      ),
+    };
+  },
+);
+
+export const directMessages = mysqlTable(
+  "directMessage",
+  {
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => v4()),
+    conversationId: varchar("conversationId", { length: 255 }).notNull(),
+    userId: varchar("userId", { length: 255 }).notNull(),
+    content: text("content").notNull(),
+    fileUrl: varchar("fileUrl", { length: 255 }),
+    createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    editedAt: timestamp("editedAt", { mode: "date", fsp: 3 }),
+  },
+  (directMessage) => {
+    return {
+      conversationIdx: index("conversationIdx").on(
+        directMessage.conversationId,
+      ),
+      userIdx: index("userIdx").on(directMessage.userId),
+    };
+  },
+);
+
 export const userRelations = relations(users, ({ many }) => ({
   guilds: many(guilds),
 }));
