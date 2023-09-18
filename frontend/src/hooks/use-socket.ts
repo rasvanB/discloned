@@ -8,55 +8,117 @@ import { trpc } from "@/app/_trpc/client";
 import { queryClient } from "@/app/_trpc/provider";
 import { env } from "@/env.mjs";
 
-export const addMessageToCache = async (message: MessageSelect) => {
-  const messagesQueryKey = getQueryKey(
-    trpc.getChannelMessages,
-    {
-      channelId: message.channelId,
-    },
-    "query",
-  );
-
-  await queryClient.setQueryData(messagesQueryKey, (oldData) => {
-    if (!oldData) return [message];
-    return [message, ...(oldData as Array<unknown>)];
-  });
-};
-
-const updateMessageInCache = async (message: MessageSelect) => {
-  const messagesQueryKey = getQueryKey(
-    trpc.getChannelMessages,
-    {
-      channelId: message.channelId,
-    },
-    "query",
-  );
-
-  await queryClient.setQueryData(messagesQueryKey, (oldData) => {
-    if (!oldData) return [];
-    return (oldData as Array<unknown>).map((msg) => {
-      if ((msg as MessageSelect).id === message.id) {
-        return message;
-      }
-      return msg;
-    });
-  });
-};
-
-const deleteMessageFromCache = async (messageId: string, channelId: string) => {
-  const messagesQueryKey = getQueryKey(
-    trpc.getChannelMessages,
+const getMessagesQueryKey = (channelId: string) => {
+  return getQueryKey(
+    trpc.infiniteMessages,
     {
       channelId,
     },
-    "query",
+    "infinite",
   );
+};
 
-  await queryClient.setQueryData(messagesQueryKey, (oldData) => {
-    if (!oldData) return [];
-    return (oldData as Array<unknown>).filter(
-      (msg) => (msg as MessageSelect).id !== messageId,
-    );
+type OldData =
+  | {
+      pages: Array<{
+        items: Array<unknown>;
+      }>;
+    }
+  | undefined;
+
+export const addMessageToCache = (message: MessageSelect) => {
+  const messagesQueryKey = getMessagesQueryKey(message.channelId);
+
+  queryClient.setQueryData(messagesQueryKey, (oldData: OldData) => {
+    if (!oldData || !oldData.pages || oldData.pages.length === 0) {
+      return {
+        pages: [
+          {
+            items: [message],
+          },
+        ],
+      };
+    }
+
+    const pages = [...oldData.pages];
+
+    if (!pages[0] || !pages[0].items || pages[0].items.length === 0) {
+      return {
+        ...oldData,
+        pages: [
+          {
+            items: [message],
+          },
+        ],
+      };
+    }
+
+    pages[0] = {
+      ...pages[0],
+      items: [message, ...pages[0].items],
+    };
+
+    return {
+      ...oldData,
+      pages,
+    };
+  });
+};
+
+const updateMessageInCache = (message: MessageSelect) => {
+  const messagesQueryKey = getMessagesQueryKey(message.channelId);
+
+  queryClient.setQueryData(messagesQueryKey, (oldData: OldData) => {
+    if (!oldData || !oldData.pages || oldData.pages.length === 0)
+      return oldData;
+
+    const pages = oldData.pages.map((page) => {
+      if (!page.items || page.items.length === 0) return page;
+
+      const items = page.items.map((msg) => {
+        if ((msg as MessageSelect).id === message.id) {
+          return message;
+        }
+        return msg;
+      });
+
+      return {
+        ...page,
+        items,
+      };
+    });
+
+    return {
+      ...oldData,
+      pages,
+    };
+  });
+};
+
+const deleteMessageFromCache = (messageId: string, channelId: string) => {
+  const messagesQueryKey = getMessagesQueryKey(channelId);
+
+  queryClient.setQueryData(messagesQueryKey, (oldData: OldData) => {
+    if (!oldData || !oldData.pages || oldData.pages.length === 0)
+      return oldData;
+
+    const pages = oldData.pages.map((page) => {
+      if (!page.items || page.items.length === 0) return page;
+
+      const items = page.items.filter((msg) => {
+        return (msg as MessageSelect).id !== messageId;
+      });
+
+      return {
+        ...page,
+        items,
+      };
+    });
+
+    return {
+      ...oldData,
+      pages,
+    };
   });
 };
 
@@ -97,16 +159,16 @@ const useSocket = ({ channelId }: { channelId: string }) => {
       setIsConnected(false);
     });
 
-    socket.on("new-message", async (message) => {
-      await addMessageToCache(message);
+    socket.on("new-message", (message) => {
+      addMessageToCache(message);
     });
 
-    socket.on("message-update", async (message) => {
-      await updateMessageInCache(message);
+    socket.on("message-update", (message) => {
+      updateMessageInCache(message);
     });
 
-    socket.on("message-delete", async (messageId) => {
-      await deleteMessageFromCache(messageId, channelId);
+    socket.on("message-delete", (messageId) => {
+      deleteMessageFromCache(messageId, channelId);
     });
 
     return () => {
