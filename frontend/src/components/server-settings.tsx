@@ -51,6 +51,7 @@ const ServerSettings = ({
   guildId: string;
 }) => {
   const canEditServer = userRole === "owner" || userRole === "admin";
+  const canLeave = userRole !== "owner";
 
   const { onOpen } = useModal();
 
@@ -86,13 +87,17 @@ const ServerSettings = ({
             </DropdownMenuItem>
             {canEditServer && <DropdownMenuItem>Settings</DropdownMenuItem>}
           </DropdownMenuGroup>
-          <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DestructiveMenuItem
-              Icon={LogOutIcon}
-              text={"Leave Server"}
-              onSelect={() => openConfirmModal("leaveServer")}
-            />
+            {canLeave && (
+              <>
+                <DropdownMenuSeparator />
+                <DestructiveMenuItem
+                  Icon={LogOutIcon}
+                  text={"Leave Server"}
+                  onSelect={() => openConfirmModal("leaveServer")}
+                />
+              </>
+            )}
             {canEditServer && (
               <>
                 <DropdownMenuSeparator />
