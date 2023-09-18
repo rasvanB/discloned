@@ -1,4 +1,4 @@
-import { and, desc, eq, sql, inArray, not } from "drizzle-orm";
+import { and, desc, eq, sql, not } from "drizzle-orm";
 import { db } from ".";
 import {
   channels,
@@ -372,14 +372,19 @@ export async function addMemberToGuild(guildId: string, userId: string) {
   }
 }
 
-export async function getChannelMessages(channelId: string, limit: number) {
+export async function getChannelMessages(
+  channelId: string,
+  limit: number,
+  offset = 0,
+) {
   try {
     return await db
       .select()
       .from(messages)
       .where(eq(messages.channelId, channelId))
       .orderBy(desc(messages.createdAt))
-      .limit(limit)
+      .limit(limit + 1)
+      .offset(offset)
       .execute();
   } catch (error) {
     throw new Error("Something went wrong while getting channel messages");
