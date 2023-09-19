@@ -9,6 +9,7 @@ import TooltipWrapper from "@/components/tooltip";
 import { ProcedureOutputs } from "@/app/_trpc/serverClient";
 import ManageMembersModal from "@/components/modals/manage-members-modal";
 import { useModal } from "@/hooks/use-modal";
+import MemberListSkeleton from "@/components/skeletons/member-list-skeleton";
 
 const MemberList = ({
   guildId,
@@ -35,9 +36,8 @@ const MemberList = ({
     });
   };
 
-  // TODO: add loading state skeleton
   if (isLoading) {
-    return <div>loading...</div>;
+    return <MemberListSkeleton />;
   }
 
   if (!data) return null;
