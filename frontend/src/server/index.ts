@@ -13,6 +13,7 @@ import {
   createGuildMember,
   createServerInvite,
   createUser,
+  deleteChannel,
   deleteGuild,
   deleteGuildMember,
   getChannelById,
@@ -501,6 +502,41 @@ export const appRouter = router({
         });
       }
     }),
+  deleteChannel: protectedProcedure
+    .input(
+      z.object({
+        channelId: z.string().nonempty(),
+        guildId: z.string().nonempty(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { user } = ctx;
+      const member = await getGuildMemberByUserId(input.guildId, user.id);
+
+      if (!member) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Not a member of this guild",
+        });
+      }
+
+      if (member.role !== "owner" && member.role !== "admin") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authorized to delete channel",
+        });
+      }
+
+      try {
+        await deleteChannel(input.channelId);
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went sending message",
+          cause: error,
+        });
+      }
+    }),
   deleteMessage: protectedProcedure
     .use(useSessionToken)
     .input(
@@ -537,7 +573,7 @@ export const appRouter = router({
     .input(
       z.object({
         limit: z.number().min(1).max(100).nullish(),
-        cursor: z.number().nullish(), // <-- "cursor" needs to exist, but can be any type
+        cursor: z.number().nullish(),
         channelId: z.string().nonempty(),
       }),
     )

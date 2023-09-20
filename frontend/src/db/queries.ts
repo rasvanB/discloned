@@ -279,6 +279,15 @@ export async function deleteGuildMember(memberId: string) {
   }
 }
 
+export async function deleteChannel(channelId: string) {
+  console.log("deleting channelId: ", channelId);
+  try {
+    await db.delete(channels).where(eq(channels.id, channelId)).execute();
+  } catch (error) {
+    throw new Error("Something went wrong while deleting channel");
+  }
+}
+
 export async function getServerInvite(guildId: string) {
   try {
     const dbResult = await db
@@ -350,7 +359,6 @@ export async function getMember(memberId: string) {
             emailVerified: false,
             hashedPassword: false,
             email: false,
-            id: false,
           },
         },
       },
