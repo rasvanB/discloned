@@ -2,7 +2,7 @@ import { Hash } from "lucide-react";
 
 const ChannelGreeting = ({ channelName }: { channelName: string }) => {
   return (
-    <div className={"flex flex-col px-4 gap-2 mb-4"}>
+    <div className={"flex flex-col px-4 gap-2 mb-6"}>
       <div
         className={
           "bg-secondary w-fit p-4 rounded-full text-secondary-foreground"

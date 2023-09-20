@@ -34,7 +34,7 @@ export const ServerButton = ({
             variant={"outline"}
             className={cn(className, "w-[50px] h-[50px] p-0 overflow-hidden")}
           >
-            {Icon && <Icon size={20} />}
+            {Icon && <Icon size={22} />}
             {imageUrl && (
               <Image
                 src={imageUrl}
