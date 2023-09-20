@@ -1,4 +1,4 @@
-import { DMsSideBar, ServerSideBar } from "@/components/side-bar";
+import { ServerSideBar } from "@/components/side-bar";
 import { redirect } from "next/navigation";
 import React, { Suspense } from "react";
 import SideBarSkeleton from "@/components/skeletons/side-bar-skeleton";
@@ -14,11 +14,7 @@ const ServerLayout = ({
   return (
     <div className="w-full h-full flex">
       <Suspense fallback={<SideBarSkeleton />}>
-        {params.serverID === "me" ? (
-          <DMsSideBar />
-        ) : (
-          <ServerSideBar serverId={params.serverID} />
-        )}
+        <ServerSideBar serverId={params.serverID} />
       </Suspense>
       {children}
     </div>

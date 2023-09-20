@@ -3,7 +3,7 @@ const Loading = () => {
     <div
       className={"w-full h-full bg-card/50 flex items-center justify-center"}
     >
-      Loading...
+      Loading conversation...
     </div>
   );
 };
