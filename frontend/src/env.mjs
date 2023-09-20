@@ -12,9 +12,12 @@ export const env = createEnv({
     DISCORD_CLIENT_ID: z.string().nonempty(),
     DISCORD_CLIENT_SECRET: z.string().nonempty(),
     UPLOADTHING_SECRET: z.string().nonempty(),
+    LIVEKIT_API_KEY: z.string().nonempty(),
+    LIVEKIT_SECRET: z.string().nonempty(),
   },
   client: {
     NEXT_PUBLIC_BACKEND_URL: z.string().nonempty(),
+    NEXT_PUBLIC_LIVEKIT_URL: z.string().nonempty(),
   },
   runtimeEnv: {
     DATABASE_HOST: process.env.DATABASE_HOST,
@@ -28,5 +31,8 @@ export const env = createEnv({
     UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
     BACKEND_URL: process.env.BACKEND_URL,
     NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
+    NEXT_PUBLIC_LIVEKIT_URL: process.env.NEXT_PUBLIC_LIVEKIT_URL,
+    LIVEKIT_API_KEY: process.env.LIVEKIT_API_KEY,
+    LIVEKIT_SECRET: process.env.LIVEKIT_SECRET,
   },
 });
