@@ -19,6 +19,7 @@ import { formatMessageDateTime } from "@/utils/date-time";
 import { z } from "zod";
 import AttachmentPreview from "@/components/attachment-preview";
 import MessageAttachment from "@/components/message-attachment";
+import Link from "next/link";
 
 const messageSchema = z.object({
   message: z.string().nonempty().max(2000),
@@ -123,7 +124,7 @@ const MessageEditForm = ({
           )}
         />
         <div className={"text-xs"}>
-          escape to{" "}
+          escape to
           <Button
             variant={"link"}
             size={"sm"}
@@ -132,7 +133,7 @@ const MessageEditForm = ({
           >
             cancel
           </Button>
-          • enter to{" "}
+          • enter to
           <Button
             variant={"link"}
             size={"sm"}
@@ -243,7 +244,13 @@ const Message = ({
       />
       <div className={"flex flex-col w-full"}>
         <div className={"leading-none"}>
-          <span className={"font-medium mr-2"}>{authorData.name}</span>
+          {isAuthor ? (
+            <span className={"font-medium mr-2"}>{authorData.name}</span>
+          ) : (
+            <Link href={`/server/me/conversation/${authorData.id}`}>
+              <span className={"font-medium mr-2"}>{authorData.name}</span>
+            </Link>
+          )}
           <span className={"text-xs text-muted-foreground"}>
             {formatMessageDateTime(new Date(message.createdAt))}
           </span>
