@@ -10,6 +10,7 @@ import { TRPCError } from "@trpc/server";
 import {
   addMemberToGuild,
   createChannel,
+  createConversation,
   createGuildMember,
   createServerInvite,
   createUser,
@@ -18,6 +19,7 @@ import {
   deleteGuildMember,
   getChannelById,
   getChannelMessages,
+  getConversationByUser2Id,
   getGuildChannels,
   getGuildMemberByUserId,
   getGuildMembers,
@@ -33,6 +35,7 @@ import {
 import { randomUUID } from "crypto";
 import axios from "axios";
 import { env } from "@/env.mjs";
+import { generateChannelId } from "@/db/schema";
 
 export type AppRouter = typeof appRouter;
 
@@ -592,5 +595,40 @@ export const appRouter = router({
       }
 
       return { items, nextCursor };
+    }),
+  createConversation: protectedProcedure
+    .input(
+      z.object({
+        userTwoId: z.string().nonempty(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { user } = ctx;
+      try {
+        await createConversation({
+          userOneId: user.id,
+          userTwoId: input.userTwoId,
+        });
+        return await getConversationByUser2Id(input.userTwoId);
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went creating conversation",
+          cause: error,
+        });
+      }
+    }),
+  getConversationByUserTwoId: protectedProcedure
+    .input(z.string().nonempty())
+    .query(async ({ input }) => {
+      try {
+        return await getConversationByUser2Id(input);
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went getting conversation",
+          cause: error,
+        });
+      }
     }),
 });

@@ -2,6 +2,7 @@ import { and, desc, eq, sql, not } from "drizzle-orm";
 import { db } from ".";
 import {
   channels,
+  conversations,
   generateChannelId,
   guilds,
   invites,
@@ -25,6 +26,7 @@ type GuildInsert = typeof guilds.$inferInsert;
 type GuildSelect = typeof guilds.$inferSelect;
 type ChannelInsert = typeof channels.$inferInsert;
 type UserInsert = typeof users.$inferInsert;
+type ConversationInsert = typeof conversations.$inferInsert;
 type MemberInsert = typeof members.$inferInsert;
 
 export type MessageSelect = typeof messages.$inferSelect;
@@ -411,5 +413,26 @@ export async function updateMember(
       .execute();
   } catch (error) {
     throw new Error("Something went wrong while updating member");
+  }
+}
+
+export async function createConversation(input: ConversationInsert) {
+  try {
+    await db.insert(conversations).values(input).execute();
+  } catch (error) {
+    throw new Error("Something went wrong while creating conversation");
+  }
+}
+
+export async function getConversationByUser2Id(user2Id: string) {
+  try {
+    return await db.query.conversations.findFirst({
+      where(fields, { eq }) {
+        return eq(fields.userTwoId, user2Id);
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    throw new Error("Something went wrong while getting conversation");
   }
 }
