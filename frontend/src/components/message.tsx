@@ -77,7 +77,7 @@ const MessageEditForm = ({
     window.addEventListener("keydown", handleKeyDown);
 
     return () => window.removeEventListener("keyDown", handleKeyDown);
-  }, []);
+  });
 
   const shouldBeDisabled =
     form.formState.isSubmitting || updateMessageMutation.isLoading;

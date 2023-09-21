@@ -44,7 +44,7 @@ const MessageList = ({
     ref?.current?.scrollIntoView({ behavior: "instant" });
     setTimeout(() => {
       ref?.current?.scrollIntoView({ behavior: "instant" });
-    }, 1000);
+    }, 500);
   }, [ref]);
 
   if (!data) return null;

@@ -42,6 +42,13 @@ type Modal =
       state: {
         guildId: string;
       };
+    }
+  | {
+      type: "deleteChannel";
+      state: {
+        channelId: string;
+        guildId: string;
+      };
     };
 
 type ModalStore = {
