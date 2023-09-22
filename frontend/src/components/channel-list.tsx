@@ -172,7 +172,11 @@ const ChannelList = ({
                 currentChannelId={currentChannelId}
                 guildId={guildId}
                 channel={channel}
-                onDelete={() => openChannelDelete(channel.id)}
+                onDelete={
+                  canEditServer
+                    ? () => openChannelDelete(channel.id)
+                    : undefined
+                }
               />
             ))}
           </CollapsibleContent>
