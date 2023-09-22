@@ -3,7 +3,9 @@ import { Server } from "socket.io";
 import * as dotenv from "dotenv";
 import * as http from "http";
 import cors from "cors";
+
 import { decode } from "next-auth/jwt";
+
 import { z } from "zod";
 import prisma from "./lib/prisma.js";
 import { randomUUID } from "crypto";
@@ -41,6 +43,18 @@ const messageBodySchema = z.object({
   fileUrl: z.string().optional(),
 });
 
+const messageUpdateSchema = z.object({
+  memberId: z.string().nonempty(),
+  content: z.string().nonempty().max(2000),
+  channelId: z.string().nonempty(),
+  fileUrl: z.string().nullable(),
+});
+
+const messageDeleteSchema = z.object({
+  memberId: z.string().nonempty(),
+  channelId: z.string().nonempty(),
+});
+
 const io = new Server<EventsMap, EventsMap, EventsMap, SocketData>(server, {
   cors: {
     origin: "*",
@@ -48,6 +62,8 @@ const io = new Server<EventsMap, EventsMap, EventsMap, SocketData>(server, {
 });
 
 io.use(async (socket, next) => {
+  console.log("called");
+  console.time("decode");
   const token: string | undefined = socket.handshake.auth.token;
   if (!token) {
     return next(new Error("invalid token"));
@@ -69,9 +85,10 @@ io.use(async (socket, next) => {
       picture: userJWT.picture,
     };
   } catch (e) {
+    console.log(e);
     return next(new Error("invalid token"));
   }
-
+  console.timeEnd("decode");
   next();
 });
 
@@ -99,7 +116,6 @@ const useAuth = async (
         error: "unauthorized",
       });
     }
-    console.log(userJWT);
 
     res.locals.user = {
       id: userJWT.sub,
@@ -115,6 +131,7 @@ const useAuth = async (
 };
 
 app.post("/messages", useAuth, async (req, res) => {
+  console.time("sendMessage");
   const result = messageBodySchema.safeParse(req.body);
 
   if (!result.success) {
@@ -160,6 +177,7 @@ app.post("/messages", useAuth, async (req, res) => {
 
     io.to(channelId).emit("new-message", instertResult);
 
+    console.timeEnd("sendMessage");
     return res.status(200).json({
       message: "message sent",
     });
@@ -171,14 +189,8 @@ app.post("/messages", useAuth, async (req, res) => {
   }
 });
 
-const messageUpdateSchema = z.object({
-  memberId: z.string().nonempty(),
-  content: z.string().nonempty().max(2000),
-  channelId: z.string().nonempty(),
-  fileUrl: z.string().nullable(),
-});
-
 app.patch("/messages/:id", useAuth, async (req, res) => {
+  console.time("updateMessage");
   const result = messageUpdateSchema.safeParse(req.body);
 
   if (!result.success) {
@@ -217,6 +229,7 @@ app.patch("/messages/:id", useAuth, async (req, res) => {
 
       io.to(channelId).emit("message-update", updatedMessage);
 
+      console.timeEnd("updateMessage");
       return res.status(200).json({
         message: "message updated",
       });
@@ -236,6 +249,7 @@ app.patch("/messages/:id", useAuth, async (req, res) => {
 
     io.to(channelId).emit("message-update", updatedMessage);
 
+    console.timeEnd("updateMessage");
     return res.status(200).json({
       message: "message updated",
     });
@@ -247,12 +261,8 @@ app.patch("/messages/:id", useAuth, async (req, res) => {
   }
 });
 
-const messageDeleteSchema = z.object({
-  memberId: z.string().nonempty(),
-  channelId: z.string().nonempty(),
-});
-
 app.delete("/messages/:id", useAuth, async (req, res) => {
+  console.time("deleteMessage");
   const result = messageDeleteSchema.safeParse(req.body);
 
   if (!result.success) {
@@ -286,6 +296,7 @@ app.delete("/messages/:id", useAuth, async (req, res) => {
 
       io.to(channelId).emit("message-delete", messageId);
 
+      console.timeEnd("deleteMessage");
       return res.status(200).json({
         message: "message deleted",
       });
@@ -299,6 +310,8 @@ app.delete("/messages/:id", useAuth, async (req, res) => {
     });
 
     io.to(channelId).emit("message-delete", messageId);
+
+    console.timeEnd("deleteMessage");
 
     return res.status(200).json({
       message: "message deleted",
@@ -320,6 +333,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3030, () => {
+server.listen(1999, () => {
   console.log("listening on *:3030");
 });
