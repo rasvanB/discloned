@@ -2,7 +2,7 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db";
 import { getServerSession, type NextAuthOptions } from "next-auth";
 import { z } from "zod";
-import { users } from "@/db/schema";
+import { user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { env } from "@/env.mjs";
@@ -55,20 +55,20 @@ const authOptions = {
 
         const dbResult = await db
           .select()
-          .from(users)
-          .where(eq(users.email, email))
+          .from(user)
+          .where(eq(user.email, email))
           .limit(1)
           .execute();
 
-        const user = dbResult[0];
+        const userData = dbResult[0];
 
-        if (!user || !user?.hashedPassword) {
+        if (!userData || !userData?.hashedPassword) {
           throw new Error(errorMessageMap.invalid_credentials);
         }
 
         const isPasswordCorrect = await bcrypt.compare(
           password,
-          user.hashedPassword,
+          userData.hashedPassword,
         );
 
         if (!isPasswordCorrect) {
@@ -76,10 +76,10 @@ const authOptions = {
         }
 
         return {
-          id: user.id,
-          email: user.email,
-          image: user.image,
-          name: user.name,
+          id: userData.id,
+          email: userData.email,
+          image: userData.image,
+          name: userData.name,
         };
       },
     }),

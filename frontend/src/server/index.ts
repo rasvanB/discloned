@@ -35,7 +35,6 @@ import {
 import { randomUUID } from "crypto";
 import axios from "axios";
 import { env } from "@/env.mjs";
-import { generateChannelId } from "@/db/schema";
 
 export type AppRouter = typeof appRouter;
 
@@ -90,7 +89,12 @@ export const appRouter = router({
 
       try {
         const guildId = randomUUID();
-        await insertGuildToDb({ name, imageId, ownerId: user.id, id: guildId });
+        await insertGuildToDb({
+          name,
+          image: imageId,
+          ownerId: user.id,
+          id: guildId,
+        });
 
         await createChannel({
           guildId,

@@ -1,77 +1,45 @@
 import {
-  int,
-  timestamp,
   mysqlTable,
   primaryKey,
   varchar,
+  int,
   text,
-  mysqlEnum,
   index,
   unique,
+  mysqlEnum,
+  timestamp,
 } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
-import type { AdapterAccount } from "@auth/core/adapters";
-import { v4 } from "uuid";
 
 export const generateChannelId = () =>
   Math.floor(Math.random() * Math.pow(10, 14)).toString();
 
-export const users = mysqlTable("user", {
-  id: varchar("id", { length: 255 })
-    .notNull()
-    .primaryKey()
-    .$defaultFn(() => v4()),
-  name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }).unique().notNull(),
-  emailVerified: timestamp("emailVerified", {
-    mode: "date",
-    fsp: 3,
-  }),
-  hashedPassword: varchar("hashedPassword", { length: 255 }),
-  image: varchar("image", { length: 255 }),
-});
-
-export const accounts = mysqlTable(
+export const account = mysqlTable(
   "account",
   {
     userId: varchar("userId", { length: 255 }).notNull(),
-    type: varchar("type", { length: 255 })
-      .$type<AdapterAccount["type"]>()
-      .notNull(),
+    type: varchar("type", { length: 255 }).notNull(),
     provider: varchar("provider", { length: 255 }).notNull(),
     providerAccountId: varchar("providerAccountId", { length: 255 }).notNull(),
-    refresh_token: varchar("refresh_token", { length: 255 }),
-    access_token: varchar("access_token", { length: 255 }),
-    expires_at: int("expires_at"),
-    token_type: varchar("token_type", { length: 255 }),
+    refreshToken: varchar("refresh_token", { length: 255 }),
+    accessToken: varchar("access_token", { length: 255 }),
+    expiresAt: int("expires_at"),
+    tokenType: varchar("token_type", { length: 255 }),
     scope: varchar("scope", { length: 255 }),
-    id_token: text("id_token"),
-    session_state: varchar("session_state", { length: 255 }),
+    idToken: text("id_token"),
+    sessionState: varchar("session_state", { length: 255 }),
   },
-  (account) => ({
-    compoundKey: primaryKey(account.provider, account.providerAccountId),
-  }),
+  (table) => {
+    return {
+      accountProviderProviderAccountId: primaryKey(
+        table.provider,
+        table.providerAccountId,
+      ),
+    };
+  },
 );
 
-export const uploadedImages = mysqlTable("uploadedImage", {
-  id: varchar("id", { length: 255 }).notNull().primaryKey(),
-  url: varchar("url", { length: 255 }).notNull(),
-});
-
-export const guilds = mysqlTable("guild", {
-  id: varchar("id", { length: 255 })
-    .notNull()
-    .primaryKey()
-    .$defaultFn(() => v4()),
-  name: varchar("name", { length: 255 }).notNull(),
-  imageId: varchar("image", { length: 255 }),
-  ownerId: varchar("ownerId", { length: 255 }).notNull(),
-  createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
-    .notNull()
-    .defaultNow(),
-});
-
-export const channels = mysqlTable(
+export const channel = mysqlTable(
   "channel",
   {
     id: varchar("id", { length: 255 })
@@ -80,169 +48,183 @@ export const channels = mysqlTable(
       .$defaultFn(() => generateChannelId()),
     name: varchar("name", { length: 255 }).notNull(),
     guildId: varchar("guildId", { length: 255 }).notNull(),
-    createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
-      .notNull()
-      .$defaultFn(() => new Date()),
     type: mysqlEnum("type", ["text", "voice", "video"])
-      .notNull()
-      .default("text"),
-  },
-  (channel) => {
-    return {
-      guildIdx: index("guildIdx").on(channel.guildId),
-      uniqueNameGuildId: unique("unique").on(channel.guildId, channel.name),
-    };
-  },
-);
-
-export const invites = mysqlTable("invite", {
-  id: varchar("id", { length: 255 })
-    .notNull()
-    .primaryKey()
-    .$defaultFn(() => generateChannelId()),
-  guildId: varchar("guildId", { length: 255 }).notNull(),
-  createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
-    .notNull()
-    .$defaultFn(() => new Date()),
-});
-
-export const members = mysqlTable(
-  "member",
-  {
-    id: varchar("id", { length: 255 })
-      .notNull()
-      .primaryKey()
-      .$defaultFn(() => v4()),
-    userId: varchar("userId", { length: 255 }).notNull(),
-    guildId: varchar("guildId", { length: 255 }).notNull(),
-    role: mysqlEnum("role", ["owner", "admin", "member"])
-      .notNull()
-      .default("member"),
-    joinedAt: timestamp("joinedAt", { mode: "date", fsp: 3 })
+      .default("text")
+      .notNull(),
+    createdAt: timestamp("createdAt", { fsp: 3, mode: "date" })
       .notNull()
       .$defaultFn(() => new Date()),
   },
-  (member) => {
+  (table) => {
     return {
-      userIdx: index("userIdx").on(member.userId),
-      guildIdx: index("guildIdx").on(member.guildId),
-      uniqueUserGuild: unique("unique").on(member.userId, member.guildId),
+      guildIdx: index("guildIdx").on(table.guildId),
+      unique: unique("unique").on(table.guildId, table.name),
     };
   },
 );
 
-export const messages = mysqlTable(
-  "message",
-  {
-    id: varchar("id", { length: 255 })
-      .notNull()
-      .primaryKey()
-      .$defaultFn(() => v4()),
-
-    memberId: varchar("memberId", { length: 255 }).notNull(),
-    channelId: varchar("channelId", { length: 255 }).notNull(),
-
-    content: text("content").notNull(),
-    fileUrl: varchar("fileUrl", { length: 255 }),
-
-    createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
-      .notNull()
-      .$defaultFn(() => new Date()),
-
-    editedAt: timestamp("editedAt", { mode: "date", fsp: 3 }),
-  },
-  (message) => {
-    return {
-      memberIdx: index("memberIdx").on(message.memberId),
-      channelIdx: index("channelIdx").on(message.channelId),
-    };
-  },
-);
-
-export const conversations = mysqlTable(
+export const conversation = mysqlTable(
   "conversation",
   {
     id: varchar("id", { length: 255 })
       .notNull()
       .primaryKey()
-      .$defaultFn(() => generateChannelId()),
-
+      .$defaultFn(() => crypto.randomUUID()),
     userOneId: varchar("userOneId", { length: 255 }).notNull(),
     userTwoId: varchar("userTwoId", { length: 255 }).notNull(),
-
-    createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
+    createdAt: timestamp("createdAt", { fsp: 3, mode: "date" })
       .notNull()
       .$defaultFn(() => new Date()),
   },
-  (conversations) => {
+  (table) => {
     return {
-      userOneIdx: index("userOneIdx").on(conversations.userOneId),
-      userTwoIdx: index("userTwoIdx").on(conversations.userTwoId),
-      uniqueUserOneUserTwo: unique("unique").on(
-        conversations.userOneId,
-        conversations.userTwoId,
-      ),
+      unique: unique("unique").on(table.userOneId, table.userTwoId),
     };
   },
 );
 
-export const directMessages = mysqlTable(
-  "directMessage",
+export const directMessage = mysqlTable("directMessage", {
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  conversationId: varchar("conversationId", { length: 255 }).notNull(),
+  userId: varchar("userId", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  fileUrl: varchar("fileUrl", { length: 255 }),
+  createdAt: timestamp("createdAt", { fsp: 3, mode: "date" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  editedAt: timestamp("editedAt", { fsp: 3, mode: "string" }),
+});
+
+export const guild = mysqlTable("guild", {
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: varchar("name", { length: 255 }).notNull(),
+  image: varchar("image", { length: 255 }),
+  ownerId: varchar("ownerId", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt", { fsp: 3, mode: "string" })
+    .defaultNow()
+    .notNull(),
+});
+
+export const invite = mysqlTable("invite", {
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .$defaultFn(() => generateChannelId()),
+  guildId: varchar("guildId", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt", { fsp: 3, mode: "date" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const member = mysqlTable(
+  "member",
   {
     id: varchar("id", { length: 255 })
       .notNull()
       .primaryKey()
-      .$defaultFn(() => v4()),
-    conversationId: varchar("conversationId", { length: 255 }).notNull(),
+      .$defaultFn(() => crypto.randomUUID()),
     userId: varchar("userId", { length: 255 }).notNull(),
-    content: text("content").notNull(),
-    fileUrl: varchar("fileUrl", { length: 255 }),
-    createdAt: timestamp("createdAt", { mode: "date", fsp: 3 })
+    guildId: varchar("guildId", { length: 255 }).notNull(),
+    role: mysqlEnum("role", ["owner", "admin", "member"])
+      .default("member")
+      .notNull(),
+    joinedAt: timestamp("joinedAt", { fsp: 3, mode: "date" })
       .notNull()
       .$defaultFn(() => new Date()),
-    editedAt: timestamp("editedAt", { mode: "date", fsp: 3 }),
   },
-  (directMessage) => {
+  (table) => {
     return {
-      conversationIdx: index("conversationIdx").on(
-        directMessage.conversationId,
-      ),
-      userIdx: index("userIdx").on(directMessage.userId),
+      userIdx: index("userIdx").on(table.userId),
+      guildIdx: index("guildIdx").on(table.guildId),
+      unique: unique("unique").on(table.userId, table.guildId),
     };
   },
 );
 
-export const userRelations = relations(users, ({ many }) => ({
-  guilds: many(guilds),
+export const message = mysqlTable(
+  "message",
+  {
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    memberId: varchar("memberId", { length: 255 }).notNull(),
+    channelId: varchar("channelId", { length: 255 }).notNull(),
+    content: text("content").notNull(),
+    fileUrl: varchar("fileUrl", { length: 255 }),
+    createdAt: timestamp("createdAt", { fsp: 3, mode: "date" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    editedAt: timestamp("editedAt", { fsp: 3, mode: "string" }),
+  },
+  (table) => {
+    return {
+      memberIdx: index("memberIdx").on(table.memberId),
+      channelIdx: index("channelIdx").on(table.channelId),
+    };
+  },
+);
+
+export const uploadedImage = mysqlTable("uploadedImage", {
+  id: varchar("id", { length: 255 }).notNull().primaryKey(),
+  url: varchar("url", { length: 255 }).notNull(),
+});
+
+export const user = mysqlTable(
+  "user",
+  {
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: varchar("name", { length: 255 }).notNull(),
+    email: varchar("email", { length: 255 }).notNull(),
+    emailVerified: timestamp("emailVerified", { fsp: 3, mode: "string" }),
+    hashedPassword: varchar("hashedPassword", { length: 255 }),
+    image: varchar("image", { length: 255 }),
+  },
+  (table) => {
+    return {
+      userEmailUnique: unique("user_email_unique").on(table.email),
+    };
+  },
+);
+
+export const userRelations = relations(user, ({ many }) => ({
+  guilds: many(guild),
 }));
 
-export const guildRelations = relations(guilds, ({ one, many }) => ({
-  owner: one(users, {
-    fields: [guilds.ownerId],
-    references: [users.id],
+export const guildRelations = relations(guild, ({ one, many }) => ({
+  owner: one(user, {
+    fields: [guild.ownerId],
+    references: [user.id],
   }),
-  image: one(uploadedImages, {
-    fields: [guilds.imageId],
-    references: [uploadedImages.id],
+  image: one(uploadedImage, {
+    fields: [guild.image],
+    references: [uploadedImage.id],
   }),
-  members: many(members),
-  channels: many(channels),
+  members: many(member),
+  channels: many(channel),
 }));
 
-export const channelRelations = relations(channels, ({ one }) => ({
-  guild: one(guilds, {
-    fields: [channels.guildId],
-    references: [guilds.id],
+export const channelRelations = relations(channel, ({ one }) => ({
+  guild: one(guild, {
+    fields: [channel.guildId],
+    references: [guild.id],
   }),
 }));
 
-export const memberRelations = relations(members, ({ one }) => ({
-  user: one(users, {
-    fields: [members.userId],
-    references: [users.id],
+export const memberRelations = relations(member, ({ one }) => ({
+  user: one(user, {
+    fields: [member.userId],
+    references: [user.id],
   }),
-  guild: one(guilds, {
-    fields: [members.guildId],
-    references: [guilds.id],
+  guild: one(guild, {
+    fields: [member.guildId],
+    references: [guild.id],
   }),
 }));
