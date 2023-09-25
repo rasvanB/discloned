@@ -28,9 +28,9 @@ model channel {
   id        String       @id @db.VarChar(255)
   name      String       @db.VarChar(255)
   guildId   String       @db.VarChar(255)
-  guild     guild        @relation(fields: [guildId], references: [id])
   type      channel_type @default(text)
   createdAt DateTime     @db.Timestamp(3)
+  guild     guild        @relation(fields: [guildId], references: [id])
   message   message[]
 
   @@unique([guildId, name], map: "unique")
@@ -38,14 +38,12 @@ model channel {
 }
 
 model guild {
-  id    String  @id @db.VarChar(255)
-  name  String  @db.VarChar(255)
-  image String? @db.VarChar(255)
-
-  ownerId String @db.VarChar(255)
-  owner   user   @relation(fields: [ownerId], references: [id])
-
+  id        String    @id @db.VarChar(255)
+  name      String    @db.VarChar(255)
+  image     String?   @db.VarChar(255)
+  ownerId   String    @db.VarChar(255)
   createdAt DateTime  @default(dbgenerated("(now())")) @db.Timestamp(3)
+  owner     user      @relation(fields: [ownerId], references: [id])
   member    member[]
   invite    invite[]
   channel   channel[]
@@ -56,8 +54,8 @@ model guild {
 model invite {
   id        String   @id @db.VarChar(255)
   guildId   String   @db.VarChar(255)
-  guild     guild    @relation(fields: [guildId], references: [id])
   createdAt DateTime @db.Timestamp(3)
+  guild     guild    @relation(fields: [guildId], references: [id])
 
   @@index([guildId], map: "guildIdx")
 }
@@ -65,11 +63,11 @@ model invite {
 model member {
   id       String      @id @db.VarChar(255)
   userId   String      @db.VarChar(255)
-  user     user        @relation(fields: [userId], references: [id])
   guildId  String      @db.VarChar(255)
-  guild    guild       @relation(fields: [guildId], references: [id])
   role     member_role @default(member)
   joinedAt DateTime    @db.Timestamp(3)
+  user     user        @relation(fields: [userId], references: [id])
+  guild    guild       @relation(fields: [guildId], references: [id])
   message  message[]
 
   @@unique([userId, guildId], map: "unique")
@@ -83,29 +81,53 @@ model uploadedImage {
 }
 
 model user {
-  id             String    @id @db.VarChar(255)
-  name           String    @db.VarChar(255)
-  email          String    @unique(map: "user_email_unique") @db.VarChar(255)
-  emailVerified  DateTime? @db.Timestamp(3)
-  hashedPassword String?   @db.VarChar(255)
-  image          String?   @db.VarChar(255)
-  guild          guild[]
-  member         member[]
+  id                     String         @id @db.VarChar(255)
+  name                   String         @db.VarChar(255)
+  email                  String         @unique(map: "user_email_unique") @db.VarChar(255)
+  emailVerified          DateTime?      @db.Timestamp(3)
+  hashedPassword         String?        @db.VarChar(255)
+  image                  String?        @db.VarChar(255)
+  guild                  guild[]
+  member                 member[]
+  conversationsInitiated conversation[] @relation("UserOne")
+  conversationsReceived  conversation[] @relation("UserTwo")
 }
 
 model message {
   id        String    @id @db.VarChar(255)
   memberId  String    @db.VarChar(255)
-  member    member    @relation(fields: [memberId], references: [id])
   channelId String    @db.VarChar(255)
-  channel   channel   @relation(fields: [channelId], references: [id])
   content   String    @db.Text
   fileUrl   String?   @db.VarChar(255)
   createdAt DateTime  @db.Timestamp(3)
   editedAt  DateTime? @db.Timestamp(3)
+  member    member    @relation(fields: [memberId], references: [id])
+  channel   channel   @relation(fields: [channelId], references: [id])
 
   @@index([channelId], map: "channelIdx")
   @@index([memberId], map: "memberIdx")
+}
+
+model conversation {
+  id        String   @db.VarChar(255)
+  userOneId String   @db.VarChar(255)
+  userTwoId String   @db.VarChar(255)
+  createdAt DateTime @db.Timestamp(3)
+  userOne   user     @relation("UserOne", fields: [userOneId], references: [id], onDelete: Cascade)
+  userTwo   user     @relation("UserTwo", fields: [userTwoId], references: [id], onDelete: Cascade)
+
+  @@unique([userOneId, userTwoId], map: "unique")
+  @@index([userTwoId], map: "userTwoIdx")
+}
+
+model directMessage {
+  id             String    @db.VarChar(255) @id
+  conversationId String    @db.VarChar(255)
+  userId         String    @db.VarChar(255)
+  content        String    @db.Text
+  fileUrl        String?   @db.VarChar(255)
+  createdAt      DateTime  @db.Timestamp(3)
+  editedAt       DateTime? @db.Timestamp(3)
 }
 
 enum channel_type {
