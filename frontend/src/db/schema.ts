@@ -152,7 +152,7 @@ export const message = mysqlTable(
       .notNull()
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    memberId: varchar("memberId", { length: 255 }).notNull(),
+    userId: varchar("userId", { length: 255 }).notNull(),
     channelId: varchar("channelId", { length: 255 }).notNull(),
     content: text("content").notNull(),
     fileUrl: varchar("fileUrl", { length: 255 }),
@@ -163,7 +163,7 @@ export const message = mysqlTable(
   },
   (table) => {
     return {
-      memberIdx: index("memberIdx").on(table.memberId),
+      userIdx: index("userIdx").on(table.userId),
       channelIdx: index("channelIdx").on(table.channelId),
     };
   },
