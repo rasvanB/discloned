@@ -20,6 +20,13 @@ DATABASE_URL=
 AUTH_SECRET=
 ```
 
+### Setup Prisma
+Add MySQL Database (I used PlanetScale)
+
+```js
+npx prisma generate
+npx prisma db push
+```
 ### Start the app
 
 ```shell
