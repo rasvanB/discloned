@@ -38,7 +38,7 @@ export const useSessionToken = t.middleware(async (opts) => {
         image: user.image,
       },
       secret: env.AUTH_SECRET,
-      maxAge: 60 * 60 * 24 * 30,
+      maxAge: 60 * 60 * 24 * 2,
     });
     return opts.next({
       ctx: {
