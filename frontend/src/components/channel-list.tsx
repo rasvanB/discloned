@@ -11,6 +11,7 @@ import { useState } from "react";
 import { Button, buttonVariants } from "./ui/button";
 import {
   ChevronRight,
+  CircleEllipsis,
   Hash,
   Plus,
   Trash,
@@ -59,18 +60,32 @@ const Channel = ({
         <span className="leading-none font-medium text-sm truncate">
           {channel.name}
         </span>
+        {onDelete && (
+          <Button
+            variant="ghost"
+            size={"icon"}
+            onClick={onDelete}
+            className={
+              "absolute top-0 right-2 hidden group-hover:flex hover:text-red-500"
+            }
+          >
+            <CircleEllipsis size={16} />
+          </Button>
+        )}
       </Link>
       {onDelete && (
-        <Button
-          variant="ghost"
-          size={"icon"}
-          onClick={onDelete}
-          className={
-            "absolute top-0 right-2 hidden group-hover:flex hover:text-red-500"
-          }
-        >
-          <Trash size={16} />
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            size={"icon"}
+            onClick={onDelete}
+            className={
+              "absolute top-0 right-2 hidden group-hover:flex hover:text-red-500"
+            }
+          >
+            <Trash size={16} />
+          </Button>
+        </>
       )}
     </div>
   );
