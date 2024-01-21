@@ -1,5 +1,20 @@
 ## Discord Clone
-
+### Features
+- Real-time messaging using Socket.io
+- Send attachments as messages using UploadThing
+- Delete & Edit messages in real time for all users
+- Create Text, Audio and Video call Channels
+- Member management (Kick, Role change)
+- Unique invite link generation & full working invite system
+- Infinite loading for messages
+- Server creation and customization
+- Beautiful UI using TailwindCSS and ShadcnUI
+- Full responsivity and mobile UI
+- Light / Dark mode
+- Websocket fallback: Polling with alerts
+- ORM using Drizzle
+- MySQL database using Planetscale
+- Authentication with NextAuth
 ---
 ### Stack:
 - React with Next 13
